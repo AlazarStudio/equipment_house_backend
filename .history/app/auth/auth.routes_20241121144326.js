@@ -1,6 +1,5 @@
 import express from 'express';
 
-// eslint-disable-next-line import/extensions
 import { authUser, registerUser } from './auth.controller.js';
 
 const router = express.Router();

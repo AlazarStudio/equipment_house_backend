@@ -22,6 +22,7 @@ model User {
   login    String @unique
   name     String
   password String
+  city
 }
 
 model Category {
