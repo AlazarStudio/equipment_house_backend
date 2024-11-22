@@ -1,0 +1,104 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  email    String   @unique
+  login    String   @unique
+  name     String
+  password String
+  Basket   Basket[]
+}
+
+model Category {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  title       String
+  img         String[]
+  SubCategory SubCategory[]
+  Product     Product[]
+}
+
+model SubCategory {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  title      String
+  img        String[]
+  product    Product[]
+  Category   Category  @relation(fields: [categoryId], references: [id])
+  categoryId Int
+}
+
+model BusinessSolution {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  name         String
+  price        Int
+  img          String[]
+  availability Boolean
+  product      Product[]
+}
+
+model Product {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  name            String
+  price           Int
+  img             String[]
+  type            String
+  availability    Boolean
+  code            String
+  description     String   @db.Text
+  characteristics String   @db.Text
+
+  businessSolutionId Int
+  BusinessSolution   BusinessSolution @relation(fields: [businessSolutionId], references: [id])
+  Category           Category         @relation(fields: [categoryId], references: [id])
+  SubCategory        SubCategory?     @relation(fields: [subCategoryId], references: [id])
+  subCategoryId      Int?
+  categoryId         Int
+}
+
+model News {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  title       String
+  date        DateTime
+  img         String[]
+  description String   @db.Text
+}
+
+model Basket {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  User        User         @relation(fields: [userId], references: [id])
+  userId      Int
+  basketItems BasketItem[]
+}
