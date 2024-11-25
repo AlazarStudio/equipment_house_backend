@@ -15,7 +15,7 @@ export const generateToken = (userId, role = 'USER') => {
       },
       process.env.JWT_SECRET,
       {
-        expiresIn: '5d', // Срок действия токена (5 дней)
+        expiresIn: '1d', // Срок действия токена (1 день)
       }
     );
   } catch (error) {

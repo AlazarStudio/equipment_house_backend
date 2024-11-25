@@ -18,34 +18,57 @@ export const getCategories = asyncHandler(async (req, res) => {
   // Формирование объекта where для Prisma
   const where = Object.keys(filters).reduce((acc, field) => {
     const value = filters[field];
-    if (Array.isArray(value)) {
-      acc[field] = { in: value }; // Если значение массив, используем `in`
-    } else if (typeof value === 'string') {
-      acc[field] = { contains: value, mode: 'insensitive' }; // Частичное совпадение
-    } else {
-      acc[field] = { equals: value }; // Для одиночного значения
-    }
+    acc[field] =
+      typeof value === 'string'
+        ? { contains: value, mode: 'insensitive' } // Частичное совпадение, регистронезависимое
+        : { equals: value }; // Точное совпадение для других типов
     return acc;
   }, {});
 
-  // Общий подсчет категорий
   const totalCategories = await prisma.category.count({ where });
 
-  const categories = await prisma.category.findMany({
-    where,
-    skip: rangeStart,
-    take: rangeEnd - rangeStart + 1,
-    orderBy: { [sortField]: sortOrder },
-    include: { SubCategory: true }, // Включаем подкатегории
+  export const getCategories = asyncHandler(async (req, res) => {
+    const { range, sort, filter } = req.query;
+  
+    const rangeStart = range ? JSON.parse(range)[0] : 0;
+    const rangeEnd = range ? JSON.parse(range)[1] : 9;
+  
+    const sortField = sort ? JSON.parse(sort)[0] : 'createdAt';
+    const sortOrder = sort ? JSON.parse(sort)[1].toLowerCase() : 'desc';
+  
+    const filters = filter ? JSON.parse(filter) : {};
+  
+    // Формирование объекта where для Prisma
+    const where = Object.keys(filters).reduce((acc, field) => {
+      const value = filters[field];
+      if (Array.isArray(value)) {
+        acc[field] = { in: value }; // Если значение массив, используем `in`
+      } else if (typeof value === 'string') {
+        acc[field] = { contains: value, mode: 'insensitive' }; // Частичное совпадение
+      } else {
+        acc[field] = { equals: value }; // Для одиночного значения
+      }
+      return acc;
+    }, {});
+  
+    // Общий подсчет категорий
+    const totalCategories = await prisma.category.count({ where });
+  
+    const categories = await prisma.category.findMany({
+      where,
+      skip: rangeStart,
+      take: rangeEnd - rangeStart + 1,
+      orderBy: { [sortField]: sortOrder },
+      include: { SubCategory: true }, // Включаем подкатегории
+    });
+  
+    // Установка заголовка Content-Range для поддержки пагинации
+    res.set(
+      'Content-Range',
+      `categories ${rangeStart}-${Math.min(rangeEnd, totalCategories - 1)}/${totalCategories}`
+    );
+    res.json(categories);
   });
-
-  // Установка заголовка Content-Range для поддержки пагинации
-  res.set(
-    'Content-Range',
-    `categories ${rangeStart}-${Math.min(rangeEnd, totalCategories - 1)}/${totalCategories}`
-  );
-  res.json(categories);
-});
 
 // @desc    Get single category by ID
 // @route   GET /api/categories/:id

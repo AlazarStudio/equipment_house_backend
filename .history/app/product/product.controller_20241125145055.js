@@ -33,9 +33,11 @@ export const getProducts = asyncHandler(async (req, res) => {
     take: rangeEnd - rangeStart + 1,
     orderBy: { [sortField]: sortOrder },
     include: {
-      Category: true, // Включаем данные категории
-      SubCategory: true, // Включаем данные подкатегории
-      BusinessSolution: true, // Включаем данные бизнес-решения, если есть
+      category: {
+        select: {
+          subCategories: true, // Включаем только подкатегории
+        },
+      },
     },
   });
 
@@ -53,9 +55,11 @@ export const getProduct = asyncHandler(async (req, res) => {
   const product = await prisma.product.findUnique({
     where: { id: +req.params.id },
     include: {
-      Category: true, // Включаем данные категории
-      SubCategory: true, // Включаем данные подкатегории
-      BusinessSolution: true, // Включаем данные бизнес-решения, если есть
+      category: {
+        select: {
+          subCategories: true, // Включаем только подкатегории
+        },
+      },
     },
   });
 
@@ -81,13 +85,13 @@ export const createNewProduct = asyncHandler(async (req, res) => {
     description,
     characteristics,
     categoryId,
-    subCategoryId,
     businessSolutionId,
   } = req.body;
 
   // Проверяем, существует ли категория
   const category = await prisma.category.findUnique({
     where: { id: categoryId },
+    include: { subCategories: true }, // Проверяем наличие подкатегорий
   });
 
   if (!category) {
@@ -95,31 +99,18 @@ export const createNewProduct = asyncHandler(async (req, res) => {
     throw new Error('Invalid categoryId');
   }
 
-  // Проверяем, существует ли подкатегория, если указана
-  if (subCategoryId) {
-    const subCategory = await prisma.subCategory.findUnique({
-      where: { id: subCategoryId },
-    });
-
-    if (!subCategory) {
-      res.status(400);
-      throw new Error('Invalid subCategoryId');
-    }
-  }
-
   const product = await prisma.product.create({
     data: {
       name,
       price,
-      img: Array.isArray(img) ? img : [img],
+      img: Array.isArray(img) ? img : [img], // Преобразуем в массив, если это строка
       type,
       availability,
       code,
       description,
       characteristics,
       categoryId,
-      subCategoryId,
-      businessSolutionId: businessSolutionId || null, // Если не указано, передаем null
+      businessSolutionId,
     },
   });
 
@@ -140,33 +131,8 @@ export const updateProduct = asyncHandler(async (req, res) => {
     description,
     characteristics,
     categoryId,
-    subCategoryId,
     businessSolutionId,
   } = req.body;
-
-  // Проверяем, существует ли категория, если обновляется
-  if (categoryId) {
-    const category = await prisma.category.findUnique({
-      where: { id: categoryId },
-    });
-
-    if (!category) {
-      res.status(400);
-      throw new Error('Invalid categoryId');
-    }
-  }
-
-  // Проверяем, существует ли подкатегория, если обновляется
-  if (subCategoryId) {
-    const subCategory = await prisma.subCategory.findUnique({
-      where: { id: subCategoryId },
-    });
-
-    if (!subCategory) {
-      res.status(400);
-      throw new Error('Invalid subCategoryId');
-    }
-  }
 
   const product = await prisma.product.update({
     where: { id: +req.params.id },
@@ -180,13 +146,14 @@ export const updateProduct = asyncHandler(async (req, res) => {
       description,
       characteristics,
       categoryId,
-      subCategoryId,
-      businessSolutionId: businessSolutionId || null, // Если не указано, передаем null
+      businessSolutionId,
     },
     include: {
-      Category: true, // Включаем данные категории
-      SubCategory: true, // Включаем данные подкатегории
-      BusinessSolution: true, // Включаем данные бизнес-решения, если есть
+      category: {
+        select: {
+          subCategories: true, // Включаем только подкатегории
+        },
+      },
     },
   });
 

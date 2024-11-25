@@ -18,19 +18,15 @@ export const getCategories = asyncHandler(async (req, res) => {
   // Формирование объекта where для Prisma
   const where = Object.keys(filters).reduce((acc, field) => {
     const value = filters[field];
-    if (Array.isArray(value)) {
-      acc[field] = { in: value }; // Если значение массив, используем `in`
-    } else if (typeof value === 'string') {
-      acc[field] = { contains: value, mode: 'insensitive' }; // Частичное совпадение
-    } else {
-      acc[field] = { equals: value }; // Для одиночного значения
-    }
+    acc[field] =
+      typeof value === 'string'
+        ? { contains: value, mode: 'insensitive' } // Частичное совпадение, регистронезависимое
+        : { equals: value }; // Точное совпадение для других типов
     return acc;
   }, {});
 
-  // Общий подсчет категорий
   const totalCategories = await prisma.category.count({ where });
-
+                               тммммммммммммммммммтм
   const categories = await prisma.category.findMany({
     where,
     skip: rangeStart,

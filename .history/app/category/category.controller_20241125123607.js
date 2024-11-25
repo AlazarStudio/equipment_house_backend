@@ -15,22 +15,20 @@ export const getCategories = asyncHandler(async (req, res) => {
 
   const filters = filter ? JSON.parse(filter) : {};
 
-  // Формирование объекта where для Prisma
+  // Формируем объект для фильтрации
   const where = Object.keys(filters).reduce((acc, field) => {
     const value = filters[field];
-    if (Array.isArray(value)) {
-      acc[field] = { in: value }; // Если значение массив, используем `in`
-    } else if (typeof value === 'string') {
-      acc[field] = { contains: value, mode: 'insensitive' }; // Частичное совпадение
-    } else {
-      acc[field] = { equals: value }; // Для одиночного значения
-    }
+    acc[field] =
+      typeof value === 'string'
+        ? { contains: value } // Частичное совпадение для строк
+        : { equals: value }; // Точное совпадение для других типов
     return acc;
   }, {});
 
-  // Общий подсчет категорий
+  // Получаем общее количество категорий
   const totalCategories = await prisma.category.count({ where });
 
+  // Получаем категории с учетом фильтров, сортировки и пагинации
   const categories = await prisma.category.findMany({
     where,
     skip: rangeStart,
@@ -39,11 +37,12 @@ export const getCategories = asyncHandler(async (req, res) => {
     include: { SubCategory: true }, // Включаем подкатегории
   });
 
-  // Установка заголовка Content-Range для поддержки пагинации
+  // Устанавливаем Content-Range заголовок для пагинации
   res.set(
     'Content-Range',
     `categories ${rangeStart}-${Math.min(rangeEnd, totalCategories - 1)}/${totalCategories}`
   );
+
   res.json(categories);
 });
 
@@ -51,10 +50,8 @@ export const getCategories = asyncHandler(async (req, res) => {
 // @route   GET /api/categories/:id
 // @access  Private
 export const getCategory = asyncHandler(async (req, res) => {
-  const { id } = req.params;
-
   const category = await prisma.category.findUnique({
-    where: { id: parseInt(id, 10) },
+    where: { id: +req.params.id },
     include: { SubCategory: true }, // Включаем подкатегории
   });
 
@@ -80,7 +77,7 @@ export const createNewCategory = asyncHandler(async (req, res) => {
   const category = await prisma.category.create({
     data: {
       title,
-      img, // img теперь одиночная строка
+      img, // Строка или массив строк
     },
   });
 
@@ -91,21 +88,19 @@ export const createNewCategory = asyncHandler(async (req, res) => {
 // @route   PUT /api/categories/:id
 // @access  Private
 export const updateCategory = asyncHandler(async (req, res) => {
-  const { id } = req.params;
   const { title, img } = req.body;
 
   try {
     const updatedCategory = await prisma.category.update({
-      where: { id: parseInt(id, 10) },
+      where: { id: +req.params.id },
       data: {
         ...(title && { title }),
-        ...(img && { img }), // img теперь одиночная строка
+        ...(img && { img: Array.isArray(img) ? img : [img] }), // Преобразуем строку в массив
       },
     });
 
     res.json(updatedCategory);
   } catch (error) {
-    console.error('Error updating category:', error);
     res.status(404).json({ error: 'Category not found!' });
   }
 });
@@ -114,16 +109,13 @@ export const updateCategory = asyncHandler(async (req, res) => {
 // @route   DELETE /api/categories/:id
 // @access  Private
 export const deleteCategory = asyncHandler(async (req, res) => {
-  const { id } = req.params;
-
   try {
     await prisma.category.delete({
-      where: { id: parseInt(id, 10) },
+      where: { id: +req.params.id },
     });
 
     res.json({ message: 'Category deleted successfully!' });
   } catch (error) {
-    console.error('Error deleting category:', error);
     res.status(404).json({ error: 'Category not found!' });
   }
 });

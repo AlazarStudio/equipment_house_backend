@@ -29,7 +29,7 @@ model User {
 
 enum Role {
   USER
-  ADMIN
+  admin
 }
 
 model Category {
@@ -49,6 +49,7 @@ model SubCategory {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   title      String
+  img        String
   product    Product[]
   Category   Category  @relation(fields: [categoryId], references: [id])
   categoryId Int
@@ -73,7 +74,7 @@ model Product {
 
   name            String
   price           Int
-  img             String[]
+  img             String
   type            String
   availability    Boolean
   code            String

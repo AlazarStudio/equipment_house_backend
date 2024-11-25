@@ -1,19 +1,19 @@
 import { PrismaClient } from '@prisma/client';
-import { hash } from 'argon2';
+import bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
 
 async function main() {
   // Хэширование паролей
-  const hashedPasswordAdmin = await hash('admin'); // Используем argon2 для хэширования
-  const hashedPasswordUser = await hash('noAdmin');
+  const hashedPasswordAdmin = await bcrypt.hash('admin', 10);
+  const hashedPasswordUser = await bcrypt.hash('noAdmin', 10);
 
   // Создание администратора
   await prisma.user.create({
     data: {
       name: 'admin',
       email: 'admin@admin.com',
-      password: hashedPasswordAdmin, // Сохраняем хэшированный пароль
+      password: hashedPasswordAdmin,
       login: 'admin',
       role: 'ADMIN',
     },
@@ -24,7 +24,7 @@ async function main() {
     data: {
       name: 'noAdmin',
       email: 'noAdmin@noAdmin.com',
-      password: hashedPasswordUser, // Сохраняем хэшированный пароль
+      password: hashedPasswordUser,
       login: 'noAdmin',
       role: 'USER',
     },
