@@ -6,14 +6,17 @@ import { UserFields } from '../utils/user.utils.js';
 export const protect = asyncHandler(async (req, res, next) => {
   let token;
 
+  // Проверяем, есть ли токен в заголовке Authorization
   if (req.headers.authorization?.startsWith('Bearer')) {
     token = req.headers.authorization.split(' ')[1];
   }
 
+  // Проверяем, есть ли токен в куках
   if (!token && req.cookies?.authToken) {
     token = req.cookies.authToken;
   }
 
+  // Если токен отсутствует
   if (!token) {
     res.status(401);
     throw new Error('Not authorized, no token provided');
@@ -22,8 +25,11 @@ export const protect = asyncHandler(async (req, res, next) => {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
+    // Находим пользователя по ID из токена
     const userFound = await prisma.user.findUnique({
-      where: { id: decoded.userId },
+      where: {
+        id: decoded.id, // Используем `id` из payload токена
+      },
       select: UserFields,
     });
 

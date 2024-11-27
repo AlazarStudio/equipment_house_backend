@@ -20,13 +20,7 @@ dotenv.config();
 
 const app = express();
 
-app.use(
-  cors({
-    origin: ['http://127.0.0.1:5173', 'http://localhost:5173'], // Ваши фронтенд-источники
-    credentials: true, // Включение поддержки куки
-    exposedHeaders: ['Content-Range'], // Оставляем, если нужно
-  })
-);
+app.use(cors({ exposedHeaders: ['Content-Range'] }));
 
 async function main() {
   if (process.env.NODE_ENV === 'development') app.use(morgan('dev'));

@@ -11,12 +11,12 @@ import {
 const router = express.Router();
 
 // Роут для получения содержимого корзины и добавления товаров в корзину
-router.route('/').get(protect, getBasket).post(protect, addToBasket);
+router.route('/').get( getBasket).post( addToBasket);
 
 // Роут для обновления и удаления товаров из корзины
 router
   .route('/:itemId') // Используем itemId для идентификации элемента в корзине
-  .put(protect, updateBasketItem)
+  .put( updateBasketItem)
   .delete(protect, removeFromBasket);
 
 export default router;
