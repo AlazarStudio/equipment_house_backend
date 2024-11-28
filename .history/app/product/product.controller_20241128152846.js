@@ -189,6 +189,7 @@ export const updateProduct = asyncHandler(async (req, res) => {
   res.json(product);
 });
 
+
 // @desc    Delete product
 // @route   DELETE /api/products/:id
 // @access  Private

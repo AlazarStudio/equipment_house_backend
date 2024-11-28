@@ -1,5 +1,5 @@
 import express from 'express';
-import { uploadSingle } from '../middleware/upload.middleware.js';
+import { uploadSingle } from '../middleware/';
 import {
   createNewProduct,
   deleteProduct,

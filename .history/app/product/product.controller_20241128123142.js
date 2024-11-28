@@ -1,5 +1,6 @@
 import asyncHandler from 'express-async-handler';
 import { prisma } from '../prisma.js';
+import upload from '../multer/multer.js';
 
 // @desc    Get products with pagination, sorting, and filtering
 // @route   GET /api/products
@@ -70,47 +71,13 @@ export const getProduct = asyncHandler(async (req, res) => {
 // @desc    Create new product
 // @route   POST /api/products
 // @access  Private
-export const createNewProduct = asyncHandler(async (req, res) => {
-  const {
-    name,
-    price,
-    type,
-    availability,
-    code,
-    description,
-    characteristics,
-    categoryId,
-    subCategoryId,
-    businessSolutionId,
-  } = req.body;
 
-  const img = req.file ? [req.file.path] : []; // Сохраняем путь к файлу
-
-  const category = await prisma.category.findUnique({
-    where: { id: categoryId },
-  });
-
-  if (!category) {
-    res.status(400);
-    throw new Error('Invalid categoryId');
-  }
-
-  if (subCategoryId) {
-    const subCategory = await prisma.subCategory.findUnique({
-      where: { id: subCategoryId },
-    });
-
-    if (!subCategory) {
-      res.status(400);
-      throw new Error('Invalid subCategoryId');
-    }
-  }
-
-  const product = await prisma.product.create({
-    data: {
+export const createNewProduct = [
+  upload.single('img'), // Middleware для загрузки изображения
+  asyncHandler(async (req, res) => {
+    const {
       name,
       price,
-      img,
       type,
       availability,
       code,
@@ -118,76 +85,117 @@ export const createNewProduct = asyncHandler(async (req, res) => {
       characteristics,
       categoryId,
       subCategoryId,
-      businessSolutionId: businessSolutionId || null,
-    },
-  });
+      businessSolutionId,
+    } = req.body;
 
-  res.status(201).json(product);
-});
+    if (!req.file) {
+      res.status(400);
+      throw new Error('Изображение обязательно для загрузки!');
+    }
 
-// @desc    Update product
-// @route   PUT /api/products/:id
-// @access  Private
-export const updateProduct = asyncHandler(async (req, res) => {
-  const {
-    name,
-    price,
-    type,
-    availability,
-    code,
-    description,
-    characteristics,
-    categoryId,
-    subCategoryId,
-    businessSolutionId,
-  } = req.body;
+    const imgPath = `/uploads/products/${req.file.filename}`; // Путь к файлу
 
-  const img = req.file ? [req.file.path] : undefined; // Обновляем путь к файлу
-
-  if (categoryId) {
+    // Проверяем категорию
     const category = await prisma.category.findUnique({
-      where: { id: categoryId },
+      where: { id: parseInt(categoryId) },
     });
 
     if (!category) {
       res.status(400);
       throw new Error('Invalid categoryId');
     }
-  }
 
-  if (subCategoryId) {
-    const subCategory = await prisma.subCategory.findUnique({
-      where: { id: subCategoryId },
+    const product = await prisma.product.create({
+      data: {
+        name,
+        price: parseInt(price),
+        img: imgPath,
+        type,
+        availability: availability === 'true',
+        code,
+        description,
+        characteristics,
+        categoryId: parseInt(categoryId),
+        subCategoryId: subCategoryId ? parseInt(subCategoryId) : null,
+        businessSolutionId: businessSolutionId ? parseInt(businessSolutionId) : null,
+      },
     });
 
-    if (!subCategory) {
-      res.status(400);
-      throw new Error('Invalid subCategoryId');
+    res.status(201).json(product);
+  }),
+];
+
+
+// @desc    Update product
+// @route   PUT /api/products/:id
+// @access  Private
+export const updateProduct = [
+  upload.single('img'), // Middleware для обработки одного файла с полем 'img'
+  asyncHandler(async (req, res) => {
+    const {
+      name,
+      price,
+      type,
+      availability,
+      code,
+      description,
+      characteristics,
+      categoryId,
+      subCategoryId,
+      businessSolutionId,
+    } = req.body;
+
+    const img = req.file ? req.file.buffer.toString('base64') : undefined; // Сохраняем изображение, если оно загружено
+
+    // Проверяем наличие категории, если обновляется
+    if (categoryId) {
+      const category = await prisma.category.findUnique({
+        where: { id: categoryId },
+      });
+
+      if (!category) {
+        res.status(400);
+        throw new Error('Invalid categoryId');
+      }
     }
-  }
 
-  const updateData = {
-    name,
-    price,
-    type,
-    availability,
-    code,
-    description,
-    characteristics,
-    categoryId,
-    subCategoryId,
-    businessSolutionId: businessSolutionId || null,
-  };
+    // Проверяем наличие подкатегории, если обновляется
+    if (subCategoryId) {
+      const subCategory = await prisma.subCategory.findUnique({
+        where: { id: subCategoryId },
+      });
 
-  if (img) updateData.img = img;
+      if (!subCategory) {
+        res.status(400);
+        throw new Error('Invalid subCategoryId');
+      }
+    }
 
-  const product = await prisma.product.update({
-    where: { id: +req.params.id },
-    data: updateData,
-  });
+    const product = await prisma.product.update({
+      where: { id: +req.params.id },
+      data: {
+        name,
+        price,
+        ...(img && { img }), // Обновляем изображение только если оно было загружено
+        type,
+        availability,
+        code,
+        description,
+        characteristics,
+        categoryId,
+        subCategoryId,
+        businessSolutionId: businessSolutionId || null,
+      },
+      include: {
+        Category: true,
+        SubCategory: true,
+        BusinessSolution: true,
+      },
+    });
 
-  res.json(product);
-});
+    res.json(product);
+  }),
+];
 
 // @desc    Delete product
 // @route   DELETE /api/products/:id

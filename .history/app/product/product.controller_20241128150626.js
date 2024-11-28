@@ -74,6 +74,7 @@ export const createNewProduct = asyncHandler(async (req, res) => {
   const {
     name,
     price,
+    img,
     type,
     availability,
     code,
@@ -84,8 +85,7 @@ export const createNewProduct = asyncHandler(async (req, res) => {
     businessSolutionId,
   } = req.body;
 
-  const img = req.file ? [req.file.path] : []; // Сохраняем путь к файлу
-
+  // Проверяем, существует ли категория
   const category = await prisma.category.findUnique({
     where: { id: categoryId },
   });
@@ -95,6 +95,7 @@ export const createNewProduct = asyncHandler(async (req, res) => {
     throw new Error('Invalid categoryId');
   }
 
+  // Проверяем, существует ли подкатегория, если указана
   if (subCategoryId) {
     const subCategory = await prisma.subCategory.findUnique({
       where: { id: subCategoryId },
@@ -110,7 +111,7 @@ export const createNewProduct = asyncHandler(async (req, res) => {
     data: {
       name,
       price,
-      img,
+      img
       type,
       availability,
       code,
@@ -118,7 +119,7 @@ export const createNewProduct = asyncHandler(async (req, res) => {
       characteristics,
       categoryId,
       subCategoryId,
-      businessSolutionId: businessSolutionId || null,
+      businessSolutionId: businessSolutionId || null, // Если не указано, передаем null
     },
   });
 
@@ -132,6 +133,7 @@ export const updateProduct = asyncHandler(async (req, res) => {
   const {
     name,
     price,
+    img,
     type,
     availability,
     code,
@@ -142,8 +144,7 @@ export const updateProduct = asyncHandler(async (req, res) => {
     businessSolutionId,
   } = req.body;
 
-  const img = req.file ? [req.file.path] : undefined; // Обновляем путь к файлу
-
+  // Проверяем, существует ли категория, если обновляется
   if (categoryId) {
     const category = await prisma.category.findUnique({
       where: { id: categoryId },
@@ -155,6 +156,7 @@ export const updateProduct = asyncHandler(async (req, res) => {
     }
   }
 
+  // Проверяем, существует ли подкатегория, если обновляется
   if (subCategoryId) {
     const subCategory = await prisma.subCategory.findUnique({
       where: { id: subCategoryId },
@@ -166,24 +168,26 @@ export const updateProduct = asyncHandler(async (req, res) => {
     }
   }
 
-  const updateData = {
-    name,
-    price,
-    type,
-    availability,
-    code,
-    description,
-    characteristics,
-    categoryId,
-    subCategoryId,
-    businessSolutionId: businessSolutionId || null,
-  };
-
-  if (img) updateData.img = img;
-
   const product = await prisma.product.update({
     where: { id: +req.params.id },
-    data: updateData,
+    data: {
+      name,
+      price,
+      img: Array.isArray(img) ? img : [img],
+      type,
+      availability,
+      code,
+      description,
+      characteristics,
+      categoryId,
+      subCategoryId,
+      businessSolutionId: businessSolutionId || null, // Если не указано, передаем null
+    },
+    include: {
+      Category: true, // Включаем данные категории
+      SubCategory: true, // Включаем данные подкатегории
+      BusinessSolution: true, // Включаем данные бизнес-решения, если есть
+    },
   });
 
   res.json(product);
