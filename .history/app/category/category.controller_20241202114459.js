@@ -4,7 +4,7 @@ import { prisma } from '../prisma.js';
 // @desc    Get categories with pagination, sorting, and filtering
 // @route   GET /api/categories
 // @access  Private
-export const getNews = asyncHandler(async (req, res) => {
+export const getCategories = asyncHandler(async (req, res) => {
   const { range, sort, filter } = req.query;
 
   const rangeStart = range ? JSON.parse(range)[0] : 0;
@@ -28,110 +28,108 @@ export const getNews = asyncHandler(async (req, res) => {
     return acc;
   }, {});
 
-  // Общий подсчет новостей
-  const totalNews = await prisma.news.count({ where });
+  // Общий подсчет категорий
+  const totalCategories = await prisma.category.count({ where });
 
-  const news = await prisma.news.findMany({
+  const categories = await prisma.category.findMany({
     where,
     skip: rangeStart,
     take: rangeEnd - rangeStart + 1,
     orderBy: { [sortField]: sortOrder },
+    include: { SubCategory: true }, // Включаем подкатегории
   });
 
   // Установка заголовка Content-Range для поддержки пагинации
   res.set(
     'Content-Range',
-    `categories ${rangeStart}-${Math.min(rangeEnd, totalNews - 1)}/${totalNews}`
+    `categories ${rangeStart}-${Math.min(rangeEnd, totalCategories - 1)}/${totalCategories}`
   );
-  res.json(news);
+  res.json(categories);
 });
 
 // @desc    Get single category by ID
 // @route   GET /api/categories/:id
 // @access  Private
-export const getOneNews = asyncHandler(async (req, res) => {
+export const getCategory = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
-  const news = await prisma.news.findUnique({
+  const category = await prisma.category.findUnique({
     where: { id: parseInt(id, 10) },
+    include: { SubCategory: true }, // Включаем подкатегории
   });
 
-  if (!news) {
+  if (!category) {
     res.status(404).json({ error: 'Category not found!' });
     return;
   }
 
-  res.json(news);
+  res.json(category);
 });
 
 // @desc    Create new category
 // @route   POST /api/categories
 // @access  Private
-export const createNewNews = asyncHandler(async (req, res) => {
-  const { title, img, date, description } = req.body;
-
-  const images = img.map((image) =>
-    typeof image === 'object' ? `/uploads/${image.rawFile.path}` : image
-  );
-
-  console.log('123', images);
+export const createNewCategory = asyncHandler(async (req, res) => {
+  const { title } = req.body; // Текстовые данные приходят из req.body
+  const img = req.file ? `/uploads/${req.file.filename}` : null; // Путь к загруженному файлу
 
   if (!title || !img) {
     res.status(400).json({ error: 'Title and img are required' });
     return;
   }
 
-  const news = await prisma.news.create({
-    data: {
-      title,
-      img: images,
-      date,
-      description,
-    },
-  });
+  try {
+    const category = await prisma.category.create({
+      data: {
+        title,
+        img,
+      },
+    });
 
-  res.status(201).json(news);
+    res.status(201).json(category);
+  } catch (error) {
+    console.error('Ошибка создания категории:', error);
+    res.status(500).json({ error: 'Failed to create category' });
+  }
 });
 
 // @desc    Update category
 // @route   PUT /api/categories/:id
 // @access  Private
-export const updateNews = asyncHandler(async (req, res) => {
+export const updateCategory = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const { title, img, date, description } = req.body;
+  const { title, img } = req.body;
 
   try {
-    const updatedNews = await prisma.news.update({
+    const updatedCategory = await prisma.category.update({
       where: { id: parseInt(id, 10) },
       data: {
         ...(title && { title }),
-        ...(img && { img }),
-        ...(date && { date }),
-        ...(description && { description }),
+        ...(img && { img }), // img теперь одиночная строка
       },
     });
 
-    res.json(updatedNews);
+    res.json(updatedCategory);
   } catch (error) {
-    console.error('Error updating news:', error);
-    res.status(404).json({ error: 'News not found!' });
+    console.error('Error updating category:', error);
+    res.status(404).json({ error: 'Category not found!' });
   }
 });
 
 // @desc    Delete category
 // @route   DELETE /api/categories/:id
 // @access  Private
-export const deleteNews = asyncHandler(async (req, res) => {
+export const deleteCategory = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
   try {
-    await prisma.news.delete({
+    await prisma.category.delete({
       where: { id: parseInt(id, 10) },
     });
 
-    res.json({ message: 'News deleted successfully!' });
+    res.json({ message: 'Category deleted successfully!' });
   } catch (error) {
-    console.error('Error deleting news:', error);
-    res.status(404).json({ error: 'News not found!' });
+    console.error('Error deleting category:', error);
+    res.status(404).json({ error: 'Category not found!' });
   }
 });

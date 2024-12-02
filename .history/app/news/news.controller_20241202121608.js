@@ -74,8 +74,6 @@ export const createNewNews = asyncHandler(async (req, res) => {
     typeof image === 'object' ? `/uploads/${image.rawFile.path}` : image
   );
 
-  console.log('123', images);
-
   if (!title || !img) {
     res.status(400).json({ error: 'Title and img are required' });
     return;
@@ -84,7 +82,7 @@ export const createNewNews = asyncHandler(async (req, res) => {
   const news = await prisma.news.create({
     data: {
       title,
-      img: images,
+      img: image,
       date,
       description,
     },

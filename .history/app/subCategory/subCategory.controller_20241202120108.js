@@ -127,6 +127,7 @@ export const updateSubCategory = asyncHandler(async (req, res) => {
     where: { id: +req.params.id },
     data: {
       ...(title && { title }),
+      ...(img && { img }),
       ...(categoryId && { categoryId }),
     },
   });

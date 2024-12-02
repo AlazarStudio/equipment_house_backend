@@ -36,6 +36,7 @@ export const getNews = asyncHandler(async (req, res) => {
     skip: rangeStart,
     take: rangeEnd - rangeStart + 1,
     orderBy: { [sortField]: sortOrder },
+
   });
 
   // Установка заголовка Content-Range для поддержки пагинации
@@ -70,11 +71,7 @@ export const getOneNews = asyncHandler(async (req, res) => {
 export const createNewNews = asyncHandler(async (req, res) => {
   const { title, img, date, description } = req.body;
 
-  const images = img.map((image) =>
-    typeof image === 'object' ? `/uploads/${image.rawFile.path}` : image
-  );
-
-  console.log('123', images);
+  const image = img?.rawFile?.path ? `/uploads/${img.rawFile.path}` : img;
 
   if (!title || !img) {
     res.status(400).json({ error: 'Title and img are required' });
@@ -84,7 +81,7 @@ export const createNewNews = asyncHandler(async (req, res) => {
   const news = await prisma.news.create({
     data: {
       title,
-      img: images,
+      img: image,
       date,
       description,
     },

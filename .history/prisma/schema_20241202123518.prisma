@@ -38,7 +38,7 @@ model Category {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   title       String
-  img         String
+  img         String[]
   SubCategory SubCategory[]
   Product     Product[]
 }

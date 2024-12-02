@@ -68,29 +68,29 @@ export const getOneNews = asyncHandler(async (req, res) => {
 // @route   POST /api/categories
 // @access  Private
 export const createNewNews = asyncHandler(async (req, res) => {
-  const { title, img, date, description } = req.body;
+  const { title, date, description } = req.body;
+  const image = req.file ? `/uploads/${req.file.filename}` : null;
 
-  const images = img.map((image) =>
-    typeof image === 'object' ? `/uploads/${image.rawFile.path}` : image
-  );
-
-  console.log('123', images);
-
-  if (!title || !img) {
-    res.status(400).json({ error: 'Title and img are required' });
+  if (!title || !image) {
+    res.status(400).json({ error: 'Title and image are required' });
     return;
   }
 
-  const news = await prisma.news.create({
-    data: {
-      title,
-      img: images,
-      date,
-      description,
-    },
-  });
+  try {
+    const news = await prisma.news.create({
+      data: {
+        title,
+        img: image,
+        date: new Date(date), // Убедитесь, что дата корректна
+        description,
+      },
+    });
 
-  res.status(201).json(news);
+    res.status(201).json(news);
+  } catch (error) {
+    console.error('Ошибка создания новости:', error);
+    res.status(500).json({ error: 'Ошибка создания новости' });
+  }
 });
 
 // @desc    Update category

@@ -66,12 +66,12 @@ export const getSubCategory = asyncHandler(async (req, res) => {
 // @route   POST /api/subcategories
 // @access  Private
 export const createNewSubCategory = asyncHandler(async (req, res) => {
-  const { title, categoryId } = req.body;
+  const { title, img, categoryId } = req.body;
 
   // Проверяем обязательные поля
   if (!title || !categoryId) {
     res.status(400);
-    throw new Error('Title, and categoryId are required');
+    throw new Error('Title, img, and categoryId are required');
   }
 
   // Проверяем, существует ли категория
@@ -88,6 +88,7 @@ export const createNewSubCategory = asyncHandler(async (req, res) => {
   const subCategory = await prisma.subCategory.create({
     data: {
       title,
+      img,
       categoryId, // Привязываем подкатегорию к категории
     },
   });
@@ -99,7 +100,7 @@ export const createNewSubCategory = asyncHandler(async (req, res) => {
 // @route   PUT /api/subcategories/:id
 // @access  Private
 export const updateSubCategory = asyncHandler(async (req, res) => {
-  const { title, categoryId } = req.body;
+  const { title, img, categoryId } = req.body;
 
   // Проверяем, существует ли подкатегория
   const subCategory = await prisma.subCategory.findUnique({
@@ -127,6 +128,7 @@ export const updateSubCategory = asyncHandler(async (req, res) => {
     where: { id: +req.params.id },
     data: {
       ...(title && { title }),
+      ...(img && { img }),
       ...(categoryId && { categoryId }),
     },
   });
