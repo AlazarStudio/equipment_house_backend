@@ -16,7 +16,6 @@ import categoryRoutes from './app/category/category.routes.js';
 import subCategoryRoutes from './app/subCategory/subCategory.routes.js';
 import newsRoutes from './app/news/news.routes.js';
 import cartRoutes from './app/basket/basket.routes.js';
-import orderRoutes from './app/order/order.routes.js';
 
 dotenv.config();
 
