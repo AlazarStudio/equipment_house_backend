@@ -14,7 +14,7 @@
   "description": "",
   "dependencies": {
     "@faker-js/faker": "^9.0.3",
-    "@prisma/client": "^5.17.0",
+    "@prisma/client": "^5.22.0",
     "argon2": "^0.40.3",
     "axios": "^1.7.3",
     "bcrypt": "^5.1.1",
@@ -22,7 +22,7 @@
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
-    "express": "^4.19.2",
+    "express": "^4.21.1",
     "express-async-handler": "^1.2.0",
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.0",
@@ -34,6 +34,7 @@
     "prisma": "^5.17.0",
     "ra-data-simple-rest": "^5.4.0",
     "react-admin": "^5.4.0",
-    "sharp": "^0.33.5"
+    "sharp": "^0.33.5",
+    "xml2js": "^0.6.2"
   }
 }
