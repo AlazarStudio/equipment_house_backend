@@ -9,7 +9,7 @@ export const getProducts = asyncHandler(async (req, res) => {
     const { range, sort, filter } = req.query;
 
     const rangeStart = range ? JSON.parse(range)[0] : 0;
-    const rangeEnd = range ? JSON.parse(range)[1] : 100;
+    const rangeEnd = range ? JSON.parse(range)[1] : 9;
 
     const sortField = sort ? JSON.parse(sort)[0] : 'createdAt';
     const sortOrder = sort ? JSON.parse(sort)[1].toLowerCase() : 'desc';
@@ -59,7 +59,7 @@ export const getProduct = asyncHandler(async (req, res) => {
   const product = await prisma.product.findUnique({
     where: { id: +req.params.id },
     include: {
-      characteristics: true,
+      
       // category: true,
       // subCategory: true,
       // businessSolution: true,

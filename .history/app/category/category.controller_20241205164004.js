@@ -80,43 +80,60 @@ export const getCategory = asyncHandler(async (req, res) => {
 // @route   POST /api/categories
 // @access  Private
 export const createNewCategory = asyncHandler(async (req, res) => {
-  const { title, img } = req.body;
+  const { title } = req.body;
 
-  const images = img.map((image) =>
-    typeof image === 'object' ? `/uploads/${image.rawFile.path}` : image
-  );
+  // Обработка изображений с помощью multer
+  let images = [];
+  if (req.files && req.files.img) {
+    images = req.files.img.map((file) => `/uploads/${file.filename}`);
+  }
 
-  if (!title || !img ) {
-    res.status(400).json({ error: 'Title is required' });
+  if (!title) {
+    res.status(400).json({ error: 'Title and img are required' });
     return;
   }
 
-  const category = await prisma.category.create({
-    data: {
-      title,
-      img: images,
-    },
-  });
+  try {
+    const category = await prisma.category.create({
+      data: {
+        title,
+        img: images.length > 0 ? images.join(',') : undefined, // Сохраняем путь к изображению
+      },
+    });
 
-  res.status(201).json(category);
+    res.status(201).json(category);
+  } catch (error) {
+    console.error('Error creating category:', error);
+    res.status(500).json({ error: 'Failed to create category' });
+  }
 });
 
 // @desc    Update category
 // @route   PUT /api/categories/:id
 // @access  Private
+
+
 export const updateCategory = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const { title } = req.body;
 
+  // Обработка изображений
+  let images = [];
+  if (req.files && req.files.img) {
+    images = req.files.img.map((file) => `/uploads/${file.filename}`); // Сохраняем путь к файлам
+  }
+
   if (!title) {
-    res.status(400).json({ error: 'Title is required for update' });
-    return;
+    return res.status(400).json({ error: 'Title is required for update' });
   }
 
   try {
     const updatedCategory = await prisma.category.update({
       where: { id: parseInt(id, 10) },
-      data: { title },
+      data: {
+        title,
+        img: images.length > 0 ? images.join(',') : undefined, // Сохраняем путь к изображению
+      },
     });
 
     res.json(updatedCategory);

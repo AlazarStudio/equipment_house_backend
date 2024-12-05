@@ -40,7 +40,7 @@ export const getProducts = asyncHandler(async (req, res) => {
 
     res.set(
       'Content-Range',
-      `products ${rangeStart}-${Math.min(rangeEnd, totalProducts - 1)}/${totalProducts}`
+      `products ${rangeStart}-${Math.min(rangeEnd, totalProducts - 1)}/${totalProducts}`,
     );
 
     res.json(products);
@@ -77,85 +77,63 @@ export const getProduct = asyncHandler(async (req, res) => {
 // @desc    Create new product
 // @route   POST /api/products
 // @access  Private
-export const createNewProduct = asyncHandler(async (req, res) => {
-  const {
-    name,
-    price,
-    type,
-    availability,
-    code,
-    description,
-    characteristics,
-    categoryId,
-    subCategoryId,
-    businessSolutionId,
-  } = req.body;
+export const createNewCategory = asyncHandler(async (req, res) => {
+  const { title } = req.body;
 
-  if (!name || !price || !categoryId) {
-    res.status(400);
-    throw new Error('Name, price, and categoryId are required!');
+  // Обработка изображений
+  let images = [];
+  if (req.files && req.files.img) {
+    images = req.files.img.map((file) => `/uploads/${file.filename}`);
   }
 
-  const product = await prisma.product.create({
-    data: {
-      name,
-      price: parseFloat(price),
-      type,
-      availability: availability === 'true',
-      code,
-      description,
-      characteristics,
-      categoryId: parseInt(categoryId, 10),
-      subCategoryId: subCategoryId ? parseInt(subCategoryId, 10) : null,
-      businessSolutionId: businessSolutionId
-        ? parseInt(businessSolutionId, 10)
-        : null,
-    },
-  });
+  if (!title) {
+    res.status(400).json({ error: 'Title is required' });
+    return;
+  }
 
-  res.status(201).json(product);
+  try {
+    const category = await prisma.category.create({
+      data: {
+        title,
+        img: images, // Сохраняем изображения как массив строк
+      },
+    });
+
+    res.status(201).json(category);
+  } catch (error) {
+    console.error('Error creating category:', error);
+    res.status(500).json({ error: 'Failed to create category' });
+  }
 });
 
-// @desc    Update product
-// @route   PUT /api/products/:id
-// @access  Private
-export const updateProduct = asyncHandler(async (req, res) => {
-  const {
-    name,
-    price,
-    type,
-    availability,
-    code,
-    description,
-    characteristics,
-    categoryId,
-    subCategoryId,
-    businessSolutionId,
-  } = req.body;
+export const updateCategory = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { title } = req.body;
 
-  const updateData = {
-    ...(name && { name }),
-    ...(price && { price: parseFloat(price) }),
-    ...(type && { type }),
-    ...(availability !== undefined && {
-      availability: availability === 'true',
-    }),
-    ...(code && { code }),
-    ...(description && { description }),
-    ...(characteristics && { characteristics }),
-    ...(categoryId && { categoryId: parseInt(categoryId, 10) }),
-    ...(subCategoryId && { subCategoryId: parseInt(subCategoryId, 10) }),
-    ...(businessSolutionId && {
-      businessSolutionId: parseInt(businessSolutionId, 10),
-    }),
-  };
+  // Обработка изображений
+  let images = [];
+  if (req.files && req.files.img) {
+    images = req.files.img.map((file) => `/uploads/${file.filename}`);
+  }
 
-  const product = await prisma.product.update({
-    where: { id: +req.params.id },
-    data: updateData,
-  });
+  if (!title) {
+    return res.status(400).json({ error: 'Title is required for update' });
+  }
 
-  res.json(product);
+  try {
+    const updatedCategory = await prisma.category.update({
+      where: { id: parseInt(id, 10) },
+      data: {
+        title,
+        img: images.length > 0 ? images : undefined, // Если есть изображения, обновляем их
+      },
+    });
+
+    res.json(updatedCategory);
+  } catch (error) {
+    console.error('Error updating category:', error);
+    res.status(404).json({ error: 'Category not found!' });
+  }
 });
 
 // @desc    Delete product

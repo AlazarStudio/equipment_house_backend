@@ -86,7 +86,7 @@ export const createNewCategory = asyncHandler(async (req, res) => {
     typeof image === 'object' ? `/uploads/${image.rawFile.path}` : image
   );
 
-  if (!title || !img ) {
+  if (!title) {
     res.status(400).json({ error: 'Title is required' });
     return;
   }

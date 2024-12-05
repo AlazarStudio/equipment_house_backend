@@ -39,9 +39,7 @@ export const getCategories = asyncHandler(async (req, res) => {
       skip: rangeStart, // Сколько пропустить (начальный индекс)
       take: rangeEnd - rangeStart + 1, // Сколько записей взять
       orderBy: { [sortField]: sortOrder },
-      include: {
-        products: true,
-      },
+      include
     });
 
     console.log('Categories fetched:', categories); // Лог для отладки
@@ -57,6 +55,7 @@ export const getCategories = asyncHandler(async (req, res) => {
     res.status(500).json({ message: 'Error fetching categories', error });
   }
 });
+
 
 // @desc    Get single category by ID
 // @route   GET /api/categories/:id
@@ -80,22 +79,15 @@ export const getCategory = asyncHandler(async (req, res) => {
 // @route   POST /api/categories
 // @access  Private
 export const createNewCategory = asyncHandler(async (req, res) => {
-  const { title, img } = req.body;
+  const { title } = req.body;
 
-  const images = img.map((image) =>
-    typeof image === 'object' ? `/uploads/${image.rawFile.path}` : image
-  );
-
-  if (!title || !img ) {
+  if (!title) {
     res.status(400).json({ error: 'Title is required' });
     return;
   }
 
   const category = await prisma.category.create({
-    data: {
-      title,
-      img: images,
-    },
+    data: { title },
   });
 
   res.status(201).json(category);

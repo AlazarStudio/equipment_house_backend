@@ -35,7 +35,7 @@ enum Role {
 model Category {
     id          Int           @id @default(autoincrement())
     title       String
-    img         String[]
+    img
     products    Product[]
     SubCategory SubCategory[]
     createdAt   DateTime      @default(now()) @map("created_at")

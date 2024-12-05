@@ -1,4 +1,5 @@
 import asyncHandler from 'express-async-handler';
+import multer from 'multer';
 import { prisma } from '../prisma.js';
 
 // @desc    Get categories with pagination, sorting, and filtering
@@ -80,22 +81,15 @@ export const getCategory = asyncHandler(async (req, res) => {
 // @route   POST /api/categories
 // @access  Private
 export const createNewCategory = asyncHandler(async (req, res) => {
-  const { title, img } = req.body;
+  const { title } = req.body;
 
-  const images = img.map((image) =>
-    typeof image === 'object' ? `/uploads/${image.rawFile.path}` : image
-  );
-
-  if (!title || !img ) {
+  if (!title) {
     res.status(400).json({ error: 'Title is required' });
     return;
   }
 
   const category = await prisma.category.create({
-    data: {
-      title,
-      img: images,
-    },
+    data: { title },
   });
 
   res.status(201).json(category);
@@ -103,10 +97,41 @@ export const createNewCategory = asyncHandler(async (req, res) => {
 
 // @desc    Update category
 // @route   PUT /api/categories/:id
-// @access  Private
+
+// Маршрут для обновления категории с изображениями
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadDir = path.join(__dirname, 'uploads');
+    fs.mkdirSync(uploadDir, { recursive: true }); // Создаем папку, если она не существует
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const fileName = `${Date.now()}-${file.originalname}`;
+    cb(null, fileName); // Генерация уникального имени для файла
+  },
+});
+
+const upload = multer({
+  storage,
+  limits: { fileSize: 1024 * 1024 * 10 }, // Максимальный размер файла 10MB
+  fileFilter: (req, file, cb) => {
+    if (!file.mimetype.startsWith('image/')) {
+      return cb(new Error('Ошибка: только изображения разрешены.'));
+    }
+    cb(null, true);
+  },
+});
+
+// Обновление категории с изображениями
 export const updateCategory = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const { title } = req.body;
+
+  // Проверка на наличие файлов
+  let images = [];
+  if (req.files && req.files.img) {
+    images = req.files.img.map((file) => `/uploads/${file.filename}`); // Сохраняем путь к файлам
+  }
 
   if (!title) {
     res.status(400).json({ error: 'Title is required for update' });
@@ -114,9 +139,13 @@ export const updateCategory = asyncHandler(async (req, res) => {
   }
 
   try {
+    // Обновляем категорию с новым названием и изображениями
     const updatedCategory = await prisma.category.update({
       where: { id: parseInt(id, 10) },
-      data: { title },
+      data: {
+        title,
+        img: images.length > 0 ? images.join(',') : undefined, // Сохраняем путь к изображениям
+      },
     });
 
     res.json(updatedCategory);

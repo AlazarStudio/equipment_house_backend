@@ -49,7 +49,7 @@ export const getCategories = asyncHandler(async (req, res) => {
     // Устанавливаем заголовок Content-Range
     res.set(
       'Content-Range',
-      `categories ${rangeStart}-${Math.min(rangeEnd, totalCategories - 1)}/${totalCategories}`
+      `categories ${rangeStart}-${Math.min(rangeEnd, totalCategories - 1)}/${totalCategories}`,
     );
     res.json(categories); // Отправляем список категорий
   } catch (error) {
@@ -82,19 +82,17 @@ export const getCategory = asyncHandler(async (req, res) => {
 export const createNewCategory = asyncHandler(async (req, res) => {
   const { title, img } = req.body;
 
-  const images = img.map((image) =>
-    typeof image === 'object' ? `/uploads/${image.rawFile.path}` : image
-  );
+  const images = img.map((image) => (typeof image === 'object' ? `/uploads/${image.rawFile.path}` : image));
 
-  if (!title || !img ) {
-    res.status(400).json({ error: 'Title is required' });
+  if (!title || !img) {
+    res.status(400).json({ error: 'Title and img are required' });
     return;
   }
 
   const category = await prisma.category.create({
     data: {
       title,
-      img: images,
+      img: images, // img теперь одиночная строка
     },
   });
 

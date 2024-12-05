@@ -37,40 +37,23 @@ app.use(
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const uploadDir = path.join(__dirname, 'uploads');
-    fs.mkdirSync(uploadDir, { recursive: true }); // Создаём папку, если её нет
+    fs.mkdirSync(uploadDir, { recursive: true }); // Создаем папку, если она не существует
     cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
-    const originalName = Buffer.from(file.originalname, 'latin1').toString(
-      'utf-8'
-    );
-    const name = path.basename(originalName, path.extname(originalName));
-    const ext = path.extname(file.originalname).toLowerCase();
-    const fileName = `${Date.now()}-${name}${ext}`;
-    cb(null, fileName);
+    const fileName = `${Date.now()}-${file.originalname}`;
+    cb(null, fileName); // Генерация уникального имени для файла
   },
 });
 
 const upload = multer({
   storage,
-  limits: { fileSize: 1024 * 1024 * 48 }, // лимит размера файла 48MB
+  limits: { fileSize: 1024 * 1024 * 10 }, // Максимальный размер файла 10MB
   fileFilter: (req, file, cb) => {
-    const imageTypes = /jpeg|jpg|png|gif/; // Для изображений
-    const documentTypes = /pdf|doc|docx|xls|xlsx/; // Для документов
-
-    // Проверка типа файла
-    const isImage =
-      imageTypes.test(path.extname(file.originalname).toLowerCase()) &&
-      imageTypes.test(file.mimetype);
-    const isDocument =
-      documentTypes.test(path.extname(file.originalname).toLowerCase()) &&
-      documentTypes.test(file.mimetype);
-
-    if (isImage || isDocument) {
-      return cb(null, true); // Разрешаем файл, если он изображение или документ
+    if (!file.mimetype.startsWith('image/')) {
+      return cb(new Error('Ошибка: только изображения разрешены.'));
     }
-
-    cb(new Error('Ошибка: только изображения или документы разрешены.'));
+    cb(null, true);
   },
 });
 

@@ -49,7 +49,7 @@ export const getCategories = asyncHandler(async (req, res) => {
     // Устанавливаем заголовок Content-Range
     res.set(
       'Content-Range',
-      `categories ${rangeStart}-${Math.min(rangeEnd, totalCategories - 1)}/${totalCategories}`
+      `categories ${rangeStart}-${Math.min(rangeEnd, totalCategories - 1)}/${totalCategories}`,
     );
     res.json(categories); // Отправляем список категорий
   } catch (error) {
@@ -80,22 +80,15 @@ export const getCategory = asyncHandler(async (req, res) => {
 // @route   POST /api/categories
 // @access  Private
 export const createNewCategory = asyncHandler(async (req, res) => {
-  const { title, img } = req.body;
+  const { title } = req.body;
 
-  const images = img.map((image) =>
-    typeof image === 'object' ? `/uploads/${image.rawFile.path}` : image
-  );
-
-  if (!title || !img ) {
+  if (!title) {
     res.status(400).json({ error: 'Title is required' });
     return;
   }
 
   const category = await prisma.category.create({
-    data: {
-      title,
-      img: images,
-    },
+    data: { title },
   });
 
   res.status(201).json(category);
@@ -106,7 +99,9 @@ export const createNewCategory = asyncHandler(async (req, res) => {
 // @access  Private
 export const updateCategory = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const { title } = req.body;
+  const { title, img } = req.body;
+
+  const images = img.map((image) => (typeof image === 'object' ? `/uploads/${image.rawFile.path}` : image));
 
   if (!title) {
     res.status(400).json({ error: 'Title is required for update' });

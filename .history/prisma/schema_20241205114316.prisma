@@ -35,7 +35,6 @@ enum Role {
 model Category {
     id          Int           @id @default(autoincrement())
     title       String
-    img         String[]
     products    Product[]
     SubCategory SubCategory[]
     createdAt   DateTime      @default(now()) @map("created_at")
@@ -81,19 +80,9 @@ model Product {
     OrderItem          OrderItem[]
     createdAt          DateTime          @default(now()) @map("created_at")
     updatedAt          DateTime          @updatedAt @map("updated_at")
-
-    // связь с характеристиками
-    characteristics ProductCharacteristic[]
 }
 
-model ProductCharacteristic {
-    id        Int    @id @default(autoincrement())
-    productId Int // Ссылка на продукт
-    name      String // Название характеристики (например, "Мощность", "Размер")
-    value     String // Значение характеристики (например, "9.5 кВт", "840x840x775 мм")
 
-    product Product @relation(fields: [productId], references: [id])
-}
 
 model News {
     id        Int      @id @default(autoincrement())

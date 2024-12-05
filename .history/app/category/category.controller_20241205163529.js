@@ -80,22 +80,15 @@ export const getCategory = asyncHandler(async (req, res) => {
 // @route   POST /api/categories
 // @access  Private
 export const createNewCategory = asyncHandler(async (req, res) => {
-  const { title, img } = req.body;
+  const { title } = req.body;
 
-  const images = img.map((image) =>
-    typeof image === 'object' ? `/uploads/${image.rawFile.path}` : image
-  );
-
-  if (!title || !img ) {
+  if (!title) {
     res.status(400).json({ error: 'Title is required' });
     return;
   }
 
   const category = await prisma.category.create({
-    data: {
-      title,
-      img: images,
-    },
+    data: { title },
   });
 
   res.status(201).json(category);
@@ -104,9 +97,20 @@ export const createNewCategory = asyncHandler(async (req, res) => {
 // @desc    Update category
 // @route   PUT /api/categories/:id
 // @access  Private
+import asyncHandler from 'express-async-handler';
+import { prisma } from '../prisma.js';
+import multer from 'multer';
+
+// Маршрут для обновления категории с изображениями
 export const updateCategory = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const { title } = req.body;
+
+  // Проверка на наличие файлов
+  let images = [];
+  if (req.files && req.files.img) {
+    images = req.files.img.map((file) => `/uploads/${file.filename}`);
+  }
 
   if (!title) {
     res.status(400).json({ error: 'Title is required for update' });
@@ -114,9 +118,13 @@ export const updateCategory = asyncHandler(async (req, res) => {
   }
 
   try {
+    // Обновляем категорию с новым названием и изображениями
     const updatedCategory = await prisma.category.update({
       where: { id: parseInt(id, 10) },
-      data: { title },
+      data: {
+        title,
+        img: images.length > 0 ? images.join(',') : undefined, // Сохраняем путь к изображениям
+      },
     });
 
     res.json(updatedCategory);
@@ -125,6 +133,7 @@ export const updateCategory = asyncHandler(async (req, res) => {
     res.status(404).json({ error: 'Category not found!' });
   }
 });
+
 
 // @desc    Delete category
 // @route   DELETE /api/categories/:id

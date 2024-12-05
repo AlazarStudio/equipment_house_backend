@@ -35,7 +35,6 @@ enum Role {
 model Category {
     id          Int           @id @default(autoincrement())
     title       String
-    img         String[]
     products    Product[]
     SubCategory SubCategory[]
     createdAt   DateTime      @default(now()) @map("created_at")
@@ -66,24 +65,22 @@ model BusinessSolution {
 }
 
 model Product {
-    id                 Int               @id @default(autoincrement())
-    name               String
-    price              Float
-    description        String?
-    img                String[]
-    Category           Category          @relation(fields: [categoryId], references: [id])
-    categoryId         Int
-    SubCategory        SubCategory?      @relation(fields: [subCategoryId], references: [id])
-    subCategoryId      Int?
-    BusinessSolution   BusinessSolution? @relation(fields: [businessSolutionId], references: [id])
-    businessSolutionId Int?
-    BasketItem         BasketItem[]
-    OrderItem          OrderItem[]
-    createdAt          DateTime          @default(now()) @map("created_at")
-    updatedAt          DateTime          @updatedAt @map("updated_at")
-
-    // связь с характеристиками
-    characteristics ProductCharacteristic[]
+    id                    Int                     @id @default(autoincrement())
+    name                  String
+    price                 Float
+    description           String?
+    img                   String[]
+    Category              Category                @relation(fields: [categoryId], references: [id])
+    categoryId            Int
+    SubCategory           SubCategory?            @relation(fields: [subCategoryId], references: [id])
+    subCategoryId         Int?
+    BusinessSolution      BusinessSolution?       @relation(fields: [businessSolutionId], references: [id])
+    businessSolutionId    Int?
+    BasketItem            BasketItem[]
+    OrderItem             OrderItem[]
+    createdAt             DateTime                @default(now()) @map("created_at")
+    updatedAt             DateTime                @updatedAt @map("updated_at")
+    ProductCharacteristic ProductCharacteristic[]
 }
 
 model ProductCharacteristic {

@@ -37,40 +37,29 @@ app.use(
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const uploadDir = path.join(__dirname, 'uploads');
-    fs.mkdirSync(uploadDir, { recursive: true }); // Создаём папку, если её нет
+    fs.mkdirSync(uploadDir, { recursive: true }); // Создаем папку, если она не существует
     cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
-    const originalName = Buffer.from(file.originalname, 'latin1').toString(
-      'utf-8'
-    );
-    const name = path.basename(originalName, path.extname(originalName));
-    const ext = path.extname(file.originalname).toLowerCase();
-    const fileName = `${Date.now()}-${name}${ext}`;
+    const fileName = `${Date.now()}-${file.originalname}`;
     cb(null, fileName);
   },
 });
 
 const upload = multer({
   storage,
-  limits: { fileSize: 1024 * 1024 * 48 }, // лимит размера файла 48MB
+  limits: { fileSize: 1024 * 1024 * 48 }, // Лимит размера файла: 48MB
   fileFilter: (req, file, cb) => {
-    const imageTypes = /jpeg|jpg|png|gif/; // Для изображений
-    const documentTypes = /pdf|doc|docx|xls|xlsx/; // Для документов
+    const allowedTypes = /xml/; // Разрешаем только XML файлы
+    const extname = allowedTypes.test(
+      path.extname(file.originalname).toLowerCase()
+    );
+    const mimetype = allowedTypes.test(file.mimetype);
 
-    // Проверка типа файла
-    const isImage =
-      imageTypes.test(path.extname(file.originalname).toLowerCase()) &&
-      imageTypes.test(file.mimetype);
-    const isDocument =
-      documentTypes.test(path.extname(file.originalname).toLowerCase()) &&
-      documentTypes.test(file.mimetype);
-
-    if (isImage || isDocument) {
-      return cb(null, true); // Разрешаем файл, если он изображение или документ
+    if (mimetype && extname) {
+      return cb(null, true);
     }
-
-    cb(new Error('Ошибка: только изображения или документы разрешены.'));
+    cb(new Error('Ошибка: допустимы только XML файлы'));
   },
 });
 
@@ -151,9 +140,7 @@ const saveDataToDatabase = async (shop) => {
     for (const offer of offers) {
       const categoryId = parseInt(offer.categoryId, 10);
       if (isNaN(categoryId)) {
-        console.warn(
-          `Пропущен товар с некорректным categoryId: ${offer.categoryId}`
-        );
+        console.warn(`Пропущен товар с некорректным categoryId: ${offer.categoryId}`);
         continue;
       }
 
@@ -176,15 +163,12 @@ const saveDataToDatabase = async (shop) => {
             : [offer.param];
 
           const characteristicPromises = params.map((param) => {
-            const characteristicName = param.$?.name || ''; // Извлечение названия
-            const characteristicValue = param._ || ''; // Извлечение значения
+            const characteristicName = param.$?.name || '';  // Извлечение названия
+            const characteristicValue = param._ || '';      // Извлечение значения
 
             // Проверка на наличие значения
             if (!characteristicName || !characteristicValue) {
-              console.warn(
-                'Пропущены название или значение характеристики:',
-                param
-              );
+              console.warn('Пропущены название или значение характеристики:', param);
               return;
             }
 
@@ -197,7 +181,7 @@ const saveDataToDatabase = async (shop) => {
             });
           });
 
-          await Promise.all(characteristicPromises); // Параллельное выполнение запросов
+          await Promise.all(characteristicPromises);  // Параллельное выполнение запросов
         }
       } catch (error) {
         console.error(`Ошибка при сохранении товара "${offer.model}":`, error);
@@ -207,6 +191,8 @@ const saveDataToDatabase = async (shop) => {
     console.warn('Товары не найдены в XML.');
   }
 };
+
+
 
 // Продукты
 app.use('/api/products', productRoutes);
