@@ -8,7 +8,7 @@ export const getNews = asyncHandler(async (req, res) => {
   const { range, sort, filter } = req.query;
 
   const rangeStart = range ? JSON.parse(range)[0] : 0;
-  const rangeEnd = range ? JSON.parse(range)[1] : 100;
+  const rangeEnd = range ? JSON.parse(range)[1] : 1000;
 
   const sortField = sort ? JSON.parse(sort)[0] : 'createdAt';
   const sortOrder = sort ? JSON.parse(sort)[1].toLowerCase() : 'desc';
