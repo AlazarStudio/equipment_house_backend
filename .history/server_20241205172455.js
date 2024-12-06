@@ -163,20 +163,14 @@ const saveDataToDatabase = async (shop) => {
             : [offer.param];
 
           const characteristicPromises = params.map((param) => {
-            const characteristicName = param.$?.name || '';  // Извлечение названия
-            const characteristicValue = param._ || '';      // Извлечение значения
-
-            // Проверка на наличие значения
-            if (!characteristicName || !characteristicValue) {
-              console.warn('Пропущены название или значение характеристики:', param);
-              return;
-            }
+            const characteristicName = param.name;
+            const characteristicValue = param._;
 
             return prisma.productCharacteristic.create({
               data: {
                 productId: product.id,
-                name: characteristicName, // Название характеристики
-                value: characteristicValue, // Значение характеристики
+                name: characteristicName,
+                value: characteristicValue,
               },
             });
           });
@@ -191,7 +185,6 @@ const saveDataToDatabase = async (shop) => {
     console.warn('Товары не найдены в XML.');
   }
 };
-
 
 
 // Продукты
@@ -211,7 +204,7 @@ app.use(notFound);
 app.use(errorHandler);
 
 // Запуск сервера
-const PORT = process.env.PORT || 5002;
+const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
   console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);

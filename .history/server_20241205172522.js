@@ -163,10 +163,9 @@ const saveDataToDatabase = async (shop) => {
             : [offer.param];
 
           const characteristicPromises = params.map((param) => {
-            const characteristicName = param.$?.name || '';  // Извлечение названия
-            const characteristicValue = param._ || '';      // Извлечение значения
+            const characteristicName = param.name; // Получение названия характеристики
+            const characteristicValue = param._; // Получение значения характеристики
 
-            // Проверка на наличие значения
             if (!characteristicName || !characteristicValue) {
               console.warn('Пропущены название или значение характеристики:', param);
               return;
@@ -193,7 +192,6 @@ const saveDataToDatabase = async (shop) => {
 };
 
 
-
 // Продукты
 app.use('/api/products', productRoutes);
 
@@ -211,7 +209,7 @@ app.use(notFound);
 app.use(errorHandler);
 
 // Запуск сервера
-const PORT = process.env.PORT || 5002;
+const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
   console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);

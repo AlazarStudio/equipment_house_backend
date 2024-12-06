@@ -94,6 +94,7 @@ export const createNewCategory = asyncHandler(async (req, res) => {
   const category = await prisma.category.create({
     data: {
       title,
+      img,
     },
   });
 

@@ -37,29 +37,40 @@ app.use(
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const uploadDir = path.join(__dirname, 'uploads');
-    fs.mkdirSync(uploadDir, { recursive: true }); // Создаем папку, если она не существует
+    fs.mkdirSync(uploadDir, { recursive: true }); // Создаём папку, если её нет
     cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
-    const fileName = `${Date.now()}-${file.originalname}`;
+    const originalName = Buffer.from(file.originalname, 'latin1').toString(
+      'utf-8'
+    );
+    const name = path.basename(originalName, path.extname(originalName));
+    const ext = path.extname(file.originalname).toLowerCase();
+    const fileName = `${Date.now()}-${name}${ext}`;
     cb(null, fileName);
   },
 });
 
 const upload = multer({
   storage,
-  limits: { fileSize: 1024 * 1024 * 48 }, // Лимит размера файла: 48MB
+  limits: { fileSize: 1024 * 1024 * 48 }, // лимит размера файла 48MB
   fileFilter: (req, file, cb) => {
-    const allowedTypes = /xml/; // Разрешаем только XML файлы
-    const extname = allowedTypes.test(
-      path.extname(file.originalname).toLowerCase()
-    );
-    const mimetype = allowedTypes.test(file.mimetype);
+    const imageTypes = /jpeg|jpg|png|gif/; // Для изображений
+    const documentTypes = /pdf|doc|docx|xls|xlsx/; // Для документов
 
-    if (mimetype && extname) {
-      return cb(null, true);
+    // Проверка типа файла
+    const isImage =
+      imageTypes.test(path.extname(file.originalname).toLowerCase()) &&
+      imageTypes.test(file.mimetype);
+    const isDocument =
+      documentTypes.test(path.extname(file.originalname).toLowerCase()) &&
+      documentTypes.test(file.mimetype);
+
+    if (isImage || isDocument) {
+      return cb(null, true); // Разрешаем файл, если он изображение или документ
     }
-    cb(new Error('Ошибка: допустимы только XML файлы'));
+
+    cb(new Error('Ошибка: только изображения или документы разрешены.'));
   },
 });
 
@@ -99,10 +110,8 @@ app.post('/api/upload-xml', upload.single('file'), async (req, res) => {
 
     res.status(200).json({ message: 'XML успешно обработан', data: shopData });
   } catch (error) {
-    console.error('Ошибка обработки XML:', error);
-    res
-      .status(500)
-      .json({ message: 'Ошибка обработки XML', error: error.message });
+    console.error('Ошибка при обработке XML:', error);
+    res.status(500).json({ message: 'Ошибка при обработке XML', error: error.message });
   }
 });
 
@@ -140,7 +149,9 @@ const saveDataToDatabase = async (shop) => {
     for (const offer of offers) {
       const categoryId = parseInt(offer.categoryId, 10);
       if (isNaN(categoryId)) {
-        console.warn(`Пропущен товар с некорректным categoryId: ${offer.categoryId}`);
+        console.warn(
+          `Пропущен товар с некорректным categoryId: ${offer.categoryId}`
+        );
         continue;
       }
 
@@ -163,12 +174,15 @@ const saveDataToDatabase = async (shop) => {
             : [offer.param];
 
           const characteristicPromises = params.map((param) => {
-            const characteristicName = param.$?.name || '';  // Извлечение названия
-            const characteristicValue = param._ || '';      // Извлечение значения
+            const characteristicName = param.$?.name || ''; // Извлечение названия
+            const characteristicValue = param._ || ''; // Извлечение значения
 
             // Проверка на наличие значения
             if (!characteristicName || !characteristicValue) {
-              console.warn('Пропущены название или значение характеристики:', param);
+              console.warn(
+                'Пропущены название или значение характеристики:',
+                param
+              );
               return;
             }
 
@@ -181,7 +195,7 @@ const saveDataToDatabase = async (shop) => {
             });
           });
 
-          await Promise.all(characteristicPromises);  // Параллельное выполнение запросов
+          await Promise.all(characteristicPromises); // Параллельное выполнение запросов
         }
       } catch (error) {
         console.error(`Ошибка при сохранении товара "${offer.model}":`, error);
@@ -191,8 +205,6 @@ const saveDataToDatabase = async (shop) => {
     console.warn('Товары не найдены в XML.');
   }
 };
-
-
 
 // Продукты
 app.use('/api/products', productRoutes);
@@ -211,7 +223,7 @@ app.use(notFound);
 app.use(errorHandler);
 
 // Запуск сервера
-const PORT = process.env.PORT || 5002;
+const PORT = process.env.PORT || 5001;
 
 app.listen(PORT, () => {
   console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);

@@ -51,9 +51,7 @@ const upload = multer({
   limits: { fileSize: 1024 * 1024 * 48 }, // Лимит размера файла: 48MB
   fileFilter: (req, file, cb) => {
     const allowedTypes = /xml/; // Разрешаем только XML файлы
-    const extname = allowedTypes.test(
-      path.extname(file.originalname).toLowerCase()
-    );
+    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
     const mimetype = allowedTypes.test(file.mimetype);
 
     if (mimetype && extname) {
@@ -85,29 +83,20 @@ app.post('/api/upload-xml', upload.single('file'), async (req, res) => {
     const parser = new xml2js.Parser({ explicitArray: false });
     const parsedData = await parser.parseStringPromise(xmlContent);
 
-    console.log('Обработанный XML:', JSON.stringify(parsedData, null, 2));
-
-    // Валидация структуры XML
-    if (!parsedData?.yml_catalog?.shop) {
-      throw new Error('Неверная структура XML. Ожидается элемент "shop".');
-    }
-
-    const shopData = parsedData.yml_catalog.shop;
-
     // Сохранение данных в базу
-    await saveDataToDatabase(shopData);
+    await saveDataToDatabas(parsedData);
 
-    res.status(200).json({ message: 'XML успешно обработан', data: shopData });
+    res.status(200).json({ message: 'XML успешно обработан', data: parsedData });
   } catch (error) {
     console.error('Ошибка обработки XML:', error);
-    res
-      .status(500)
-      .json({ message: 'Ошибка обработки XML', error: error.message });
+    res.status(500).json({ message: 'Ошибка обработки XML', error: error.message });
   }
 });
 
 // Функция сохранения данных в базу Prisma
-const saveDataToDatabase = async (shop) => {
+const saveDataToDatabase = async (data) => {
+  const { shop } = data;
+
   // Сохранение категорий
   if (shop.categories?.category) {
     const categories = Array.isArray(shop.categories.category)
@@ -115,84 +104,31 @@ const saveDataToDatabase = async (shop) => {
       : [shop.categories.category];
 
     for (const category of categories) {
-      const categoryId = parseInt(category.$.id, 10);
-      if (isNaN(categoryId)) {
-        console.warn(`Пропущена категория с некорректным id: ${category.$.id}`);
-        continue;
-      }
-
       await prisma.category.upsert({
-        where: { id: categoryId },
+        where: { id: parseInt(category.$.id) },
         update: { title: category._ },
-        create: { id: categoryId, title: category._ },
+        create: { id: parseInt(category.$.id), title: category._ },
       });
     }
-  } else {
-    console.warn('Категории не найдены в XML.');
   }
 
   // Сохранение товаров
   if (shop.offers?.offer) {
-    const offers = Array.isArray(shop.offers.offer)
-      ? shop.offers.offer
-      : [shop.offers.offer];
+    const offers = Array.isArray(shop.offers.offer) ? shop.offers.offer : [shop.offers.offer];
 
     for (const offer of offers) {
-      const categoryId = parseInt(offer.categoryId, 10);
-      if (isNaN(categoryId)) {
-        console.warn(`Пропущен товар с некорректным categoryId: ${offer.categoryId}`);
-        continue;
-      }
-
-      try {
-        // Сохранение товара
-        const product = await prisma.product.create({
-          data: {
-            name: offer.model,
-            price: parseFloat(offer.price) || 0,
-            description: offer.description || null,
-            categoryId,
-            img: Array.isArray(offer.picture) ? offer.picture : [offer.picture],
-          },
-        });
-
-        // Сохранение характеристик для товара
-        if (offer.param) {
-          const params = Array.isArray(offer.param)
-            ? offer.param
-            : [offer.param];
-
-          const characteristicPromises = params.map((param) => {
-            const characteristicName = param.$?.name || '';  // Извлечение названия
-            const characteristicValue = param._ || '';      // Извлечение значения
-
-            // Проверка на наличие значения
-            if (!characteristicName || !characteristicValue) {
-              console.warn('Пропущены название или значение характеристики:', param);
-              return;
-            }
-
-            return prisma.productCharacteristic.create({
-              data: {
-                productId: product.id,
-                name: characteristicName, // Название характеристики
-                value: characteristicValue, // Значение характеристики
-              },
-            });
-          });
-
-          await Promise.all(characteristicPromises);  // Параллельное выполнение запросов
-        }
-      } catch (error) {
-        console.error(`Ошибка при сохранении товара "${offer.model}":`, error);
-      }
+      await prisma.product.create({
+        data: {
+          name: offer.model,
+          price: parseFloat(offer.price),
+          description: offer.description || null,
+          categoryId: parseInt(offer.categoryId),
+          img: Array.isArray(offer.picture) ? offer.picture : [offer.picture],
+        },
+      });
     }
-  } else {
-    console.warn('Товары не найдены в XML.');
   }
 };
-
-
 
 // Продукты
 app.use('/api/products', productRoutes);
@@ -211,7 +147,7 @@ app.use(notFound);
 app.use(errorHandler);
 
 // Запуск сервера
-const PORT = process.env.PORT || 5002;
+const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
   console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);

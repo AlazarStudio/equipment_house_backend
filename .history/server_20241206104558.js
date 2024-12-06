@@ -6,7 +6,6 @@ import path from 'path';
 import fs from 'fs';
 import cors from 'cors';
 import multer from 'multer';
-import xml2js from 'xml2js'; // Импорт для парсинга XML
 import { errorHandler, notFound } from './app/middleware/error.middleware.js';
 import { prisma } from './app/prisma.js';
 
@@ -27,39 +26,43 @@ const __dirname = path.resolve();
 // Настройки CORS
 app.use(
   cors({
-    origin: ['http://127.0.0.1:5173', 'http://localhost:5000'], // Источники фронтенда
+    origin: ['http://127.0.0.1:5173', 'http://localhost:5000'], // Ваши фронтенд-источники
     credentials: true, // Включение поддержки куки
-    exposedHeaders: ['Content-Range'], // Если требуется для API
+    exposedHeaders: ['Content-Range'], // Оставляем, если нужно
   })
 );
 
-// Настройка `multer` для загрузки файлов
+// Настройка `multer`
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const uploadDir = path.join(__dirname, 'uploads');
-    fs.mkdirSync(uploadDir, { recursive: true }); // Создаем папку, если она не существует
+    fs.mkdirSync(uploadDir, { recursive: true }); // Создаём папку, если её нет
     cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
-    const fileName = `${Date.now()}-${file.originalname}`;
+    const originalName = Buffer.from(file.originalname, 'latin1').toString(
+      'utf-8'
+    );
+    const name = path.basename(originalName, path.extname(originalName));
+    const ext = path.extname(file.originalname).toLowerCase();
+    const fileName = `${Date.now()}-${name}${ext}`;
     cb(null, fileName);
   },
 });
 
 const upload = multer({
   storage,
-  limits: { fileSize: 1024 * 1024 * 48 }, // Лимит размера файла: 48MB
+  limits: { fileSize: 1024 * 1024 * 48 }, // лимит размера файла 48MB
   fileFilter: (req, file, cb) => {
-    const allowedTypes = /xml/; // Разрешаем только XML файлы
-    const extname = allowedTypes.test(
+    const fileTypes = /jpeg|jpg|png|gif|pdf|doc|docx|xls|xlsx|xml/;
+    const extname = fileTypes.test(
       path.extname(file.originalname).toLowerCase()
     );
-    const mimetype = allowedTypes.test(file.mimetype);
-
+    const mimetype = fileTypes.test(file.mimetype);
     if (mimetype && extname) {
       return cb(null, true);
     }
-    cb(new Error('Ошибка: допустимы только XML файлы'));
+    cb(new Error('Ошибка: недопустимый тип файла!'));
   },
 });
 
@@ -71,7 +74,26 @@ if (process.env.NODE_ENV === 'development') app.use(morgan('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Маршрут для загрузки XML
+// Маршрут для загрузки файлов
+app.post('/uploads', upload.array('img', 10), (req, res) => {
+  try {
+    console.log('Файлы, полученные multer:', req.files);
+
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ message: 'Файлы не загружены' });
+    }
+
+    // Формируем пути для каждого загруженного файла
+    const filePaths = req.files.map((file) => `/uploads/${file.filename}`);
+    console.log('Сохранённые пути:', filePaths);
+
+    res.status(200).json({ filePaths });
+  } catch (error) {
+    console.error('Ошибка при загрузке файлов:', error);
+    res.status(500).json({ message: 'Ошибка при загрузке файлов', error });
+  }
+});
+
 app.post('/api/upload-xml', upload.single('file'), async (req, res) => {
   try {
     if (!req.file) {
@@ -79,12 +101,12 @@ app.post('/api/upload-xml', upload.single('file'), async (req, res) => {
     }
 
     const filePath = path.join(__dirname, 'uploads', req.file.filename);
+    console.log(`Загружен файл: ${filePath}`);
 
     // Чтение файла
     const xmlContent = fs.readFileSync(filePath, 'utf-8');
     const parser = new xml2js.Parser({ explicitArray: false });
     const parsedData = await parser.parseStringPromise(xmlContent);
-
     console.log('Обработанный XML:', JSON.stringify(parsedData, null, 2));
 
     // Валидация структуры XML
@@ -93,8 +115,6 @@ app.post('/api/upload-xml', upload.single('file'), async (req, res) => {
     }
 
     const shopData = parsedData.yml_catalog.shop;
-
-    // Сохранение данных в базу
     await saveDataToDatabase(shopData);
 
     res.status(200).json({ message: 'XML успешно обработан', data: shopData });
@@ -140,7 +160,9 @@ const saveDataToDatabase = async (shop) => {
     for (const offer of offers) {
       const categoryId = parseInt(offer.categoryId, 10);
       if (isNaN(categoryId)) {
-        console.warn(`Пропущен товар с некорректным categoryId: ${offer.categoryId}`);
+        console.warn(
+          `Пропущен товар с некорректным categoryId: ${offer.categoryId}`
+        );
         continue;
       }
 
@@ -163,12 +185,15 @@ const saveDataToDatabase = async (shop) => {
             : [offer.param];
 
           const characteristicPromises = params.map((param) => {
-            const characteristicName = param.$?.name || '';  // Извлечение названия
-            const characteristicValue = param._ || '';      // Извлечение значения
+            const characteristicName = param.$?.name || ''; // Извлечение названия
+            const characteristicValue = param._ || ''; // Извлечение значения
 
             // Проверка на наличие значения
             if (!characteristicName || !characteristicValue) {
-              console.warn('Пропущены название или значение характеристики:', param);
+              console.warn(
+                'Пропущены название или значение характеристики:',
+                param
+              );
               return;
             }
 
@@ -181,7 +206,7 @@ const saveDataToDatabase = async (shop) => {
             });
           });
 
-          await Promise.all(characteristicPromises);  // Параллельное выполнение запросов
+          await Promise.all(characteristicPromises); // Параллельное выполнение запросов
         }
       } catch (error) {
         console.error(`Ошибка при сохранении товара "${offer.model}":`, error);
@@ -191,8 +216,6 @@ const saveDataToDatabase = async (shop) => {
     console.warn('Товары не найдены в XML.');
   }
 };
-
-
 
 // Продукты
 app.use('/api/products', productRoutes);
@@ -206,13 +229,12 @@ app.use('/api/news', newsRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/orders', orderRoutes);
 
-// Обработка ошибок
+// Ошибки
 app.use(notFound);
 app.use(errorHandler);
 
-// Запуск сервера
-const PORT = process.env.PORT || 5002;
+const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
-  console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
-});
+app.listen(PORT, () =>
+  console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`)
+);

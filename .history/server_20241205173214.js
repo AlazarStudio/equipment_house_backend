@@ -30,7 +30,7 @@ app.use(
     origin: ['http://127.0.0.1:5173', 'http://localhost:5000'], // Источники фронтенда
     credentials: true, // Включение поддержки куки
     exposedHeaders: ['Content-Range'], // Если требуется для API
-  })
+  }),
 );
 
 // Настройка `multer` для загрузки файлов
@@ -42,24 +42,18 @@ const storage = multer.diskStorage({
   },
   filename: (req, file, cb) => {
     const fileName = `${Date.now()}-${file.originalname}`;
-    cb(null, fileName);
+    cb(null, fileName); // Генерация уникального имени для файла
   },
 });
 
 const upload = multer({
   storage,
-  limits: { fileSize: 1024 * 1024 * 48 }, // Лимит размера файла: 48MB
+  limits: { fileSize: 1024 * 1024 * 10 }, // Максимальный размер файла 10MB
   fileFilter: (req, file, cb) => {
-    const allowedTypes = /xml/; // Разрешаем только XML файлы
-    const extname = allowedTypes.test(
-      path.extname(file.originalname).toLowerCase()
-    );
-    const mimetype = allowedTypes.test(file.mimetype);
-
-    if (mimetype && extname) {
-      return cb(null, true);
+    if (!file.mimetype.startsWith('image/')) {
+      return cb(new Error('Ошибка: только изображения разрешены.'));
     }
-    cb(new Error('Ошибка: допустимы только XML файлы'));
+    cb(null, true);
   },
 });
 
@@ -163,8 +157,8 @@ const saveDataToDatabase = async (shop) => {
             : [offer.param];
 
           const characteristicPromises = params.map((param) => {
-            const characteristicName = param.$?.name || '';  // Извлечение названия
-            const characteristicValue = param._ || '';      // Извлечение значения
+            const characteristicName = param.$?.name || ''; // Извлечение названия
+            const characteristicValue = param._ || ''; // Извлечение значения
 
             // Проверка на наличие значения
             if (!characteristicName || !characteristicValue) {
@@ -181,7 +175,7 @@ const saveDataToDatabase = async (shop) => {
             });
           });
 
-          await Promise.all(characteristicPromises);  // Параллельное выполнение запросов
+          await Promise.all(characteristicPromises); // Параллельное выполнение запросов
         }
       } catch (error) {
         console.error(`Ошибка при сохранении товара "${offer.model}":`, error);
@@ -191,8 +185,6 @@ const saveDataToDatabase = async (shop) => {
     console.warn('Товары не найдены в XML.');
   }
 };
-
-
 
 // Продукты
 app.use('/api/products', productRoutes);
@@ -211,7 +203,7 @@ app.use(notFound);
 app.use(errorHandler);
 
 // Запуск сервера
-const PORT = process.env.PORT || 5002;
+const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
   console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
