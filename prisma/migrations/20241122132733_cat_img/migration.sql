@@ -1,3 +1,0 @@
--- AlterTable
-ALTER TABLE "Category" ALTER COLUMN "img" SET NOT NULL,
-ALTER COLUMN "img" SET DATA TYPE TEXT;
