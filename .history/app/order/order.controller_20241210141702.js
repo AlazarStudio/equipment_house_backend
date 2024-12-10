@@ -154,23 +154,25 @@ export const getOrder = asyncHandler(async (req, res) => {
 });
 
 // Обновление заказа
-// Обновление заказа
 export const updateOrder = asyncHandler(async (req, res) => {
   try {
     const { orderId } = req.params;
     const { items, total, adress, paymentMethod, name, phone, email } = req.body;
 
-    console.log('Обновление заказа:', { items, total, adress, paymentMethod, name, phone, email });
+    console.log('Обновление заказа:', { orderId, items, total, adress, paymentMethod, name, phone, email });
 
     // Проверка обязательных данных
     if (!items || items.length === 0) {
-      return res.status(400).json({ message: 'Нет товаров в заказе' });
+      res.status(400);
+      throw new Error('Нет товаров в заказе');
     }
     if (!adress || adress.trim() === '') {
-      return res.status(400).json({ message: 'Адрес обязателен' });
+      res.status(400);
+      throw new Error('Адрес обязателен');
     }
     if (!paymentMethod) {
-      return res.status(400).json({ message: 'Не выбран способ оплаты' });
+      res.status(400);
+      throw new Error('Не выбран способ оплаты');
     }
 
     // Находим заказ по ID
@@ -184,30 +186,26 @@ export const updateOrder = asyncHandler(async (req, res) => {
     }
 
     // Обновление заказа в базе данных
-    const updatedOrder = await prisma.order.update({
-      where: { id: parseInt(orderId) },
-      data: {
-        total,
-        adress,
-        email,
-        name,
-        phone,
-        paymentMethod,
-        orderItems: {
-          deleteMany: {}, // Удаляем старые товары
-          create: items.map((item) => ({
-            productId: item.productId,
-            quantity: item.quantity,
-            price: item.price,
-          })), // Добавляем новые товары
-        },
-      },
-      include: {
-        orderItems: {
-          include: { product: true },
-        },
-      },
-    });
+    const updateOrder = async (orderId, orderData) => {
+      try {
+        const response = await fetchJsonWithToken(`/api/orders/${orderId}`, {
+          method: 'PUT',
+          body: JSON.stringify(orderData),
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+    
+        if (response.status === 200) {
+          console.log('Order updated successfully');
+        } else {
+          console.error('Error updating order:', response.body.message);
+        }
+      } catch (error) {
+        console.error('Error:', error);
+      }
+    };
+    
 
     res.status(200).json(updatedOrder);
   } catch (error) {
@@ -215,8 +213,6 @@ export const updateOrder = asyncHandler(async (req, res) => {
     res.status(500).json({ message: 'Ошибка при обновлении заказа', error: error.message });
   }
 });
-
-
 
 
 export const deleteOrder = asyncHandler(async (req, res) => {

@@ -99,19 +99,18 @@ export const removeFromBasket = asyncHandler(async (req, res) => {
 // @desc    Update quantity of product in basket
 // @route   PUT /api/basket/:itemId
 // @access  Private
-// @desc    Update quantity of product in basket
-// @route   PUT /api/basket/:itemId
-// @access  Private
 export const updateBasketItem = asyncHandler(async (req, res) => {
   const { itemId } = req.params;
   const { quantity } = req.body;
 
-  if (!Number.isInteger(quantity) || quantity <= 0) {
+  if (!Number.isInteger(quantity) || quantity < 0) {
     res.status(400);
     throw new Error('Invalid quantity');
   }
 
-  const basketItem = await prisma.basketItem.findUnique({ where: { id: +itemId } });
+  const basketItem = await prisma.basketItem.findUnique({
+    where: { id: +itemId },
+  });
 
   if (!basketItem) {
     res.status(404);

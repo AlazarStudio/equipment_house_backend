@@ -1,9 +1,7 @@
 import asyncHandler from 'express-async-handler';
 import { prisma } from '../prisma.js';
 
-// @desc    Get user's basket
-// @route   GET /api/basket
-// @access  Private
+// Получение содержимого корзины
 export const getBasket = asyncHandler(async (req, res) => {
   const userId = req.user.id;
 
@@ -25,9 +23,7 @@ export const getBasket = asyncHandler(async (req, res) => {
   res.json(basket);
 });
 
-// @desc    Add product to basket
-// @route   POST /api/basket
-// @access  Private
+// Добавление товара в корзину
 export const addToBasket = asyncHandler(async (req, res) => {
   const userId = req.user.id;
   const { productId, quantity = 1 } = req.body;
@@ -76,37 +72,12 @@ export const addToBasket = asyncHandler(async (req, res) => {
   res.status(201).json(newBasketItem);
 });
 
-// @desc    Remove product from basket
-// @route   DELETE /api/basket/:itemId
-// @access  Private
-export const removeFromBasket = asyncHandler(async (req, res) => {
-  const { itemId } = req.params;
-
-  const basketItem = await prisma.basketItem.findUnique({
-    where: { id: +itemId },
-  });
-
-  if (!basketItem) {
-    res.status(404);
-    throw new Error('Basket item not found');
-  }
-
-  await prisma.basketItem.delete({ where: { id: +itemId } });
-
-  res.json({ message: 'Item removed from basket' });
-});
-
-// @desc    Update quantity of product in basket
-// @route   PUT /api/basket/:itemId
-// @access  Private
-// @desc    Update quantity of product in basket
-// @route   PUT /api/basket/:itemId
-// @access  Private
+// Обновление количества товара в корзине
 export const updateBasketItem = asyncHandler(async (req, res) => {
   const { itemId } = req.params;
   const { quantity } = req.body;
 
-  if (!Number.isInteger(quantity) || quantity <= 0) {
+  if (!Number.isInteger(quantity) || quantity < 0) {
     res.status(400);
     throw new Error('Invalid quantity');
   }
@@ -131,29 +102,18 @@ export const updateBasketItem = asyncHandler(async (req, res) => {
   res.json(updatedBasketItem);
 });
 
-// @desc    Get the total count of items in the user's basket
-// @route   GET /api/cart/count
-// @access  Private
-export const getCartCount = asyncHandler(async (req, res) => {
-  const userId = req.user.id;
+// Удаление товара из корзины
+export const removeFromBasket = asyncHandler(async (req, res) => {
+  const { itemId } = req.params;
 
-  const basket = await prisma.basket.findFirst({
-    where: { userId },
-    include: {
-      basketItems: true,
-    },
-  });
+  const basketItem = await prisma.basketItem.findUnique({ where: { id: +itemId } });
 
-  // Если корзина пуста, возвращаем 0
-  if (!basket) {
-    return res.json({ count: 0 });
+  if (!basketItem) {
+    res.status(404);
+    throw new Error('Basket item not found');
   }
 
-  // Считаем количество товаров в корзине
-  const totalCount = basket.basketItems.reduce(
-    (total, item) => total + item.quantity,
-    0
-  );
+  await prisma.basketItem.delete({ where: { id: +itemId } });
 
-  res.json({ count: totalCount });
+  res.json({ message: 'Item removed from basket' });
 });

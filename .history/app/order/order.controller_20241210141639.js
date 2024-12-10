@@ -154,68 +154,25 @@ export const getOrder = asyncHandler(async (req, res) => {
 });
 
 // Обновление заказа
-// Обновление заказа
-export const updateOrder = asyncHandler(async (req, res) => {
+const updateOrder = async (orderId, orderData) => {
   try {
-    const { orderId } = req.params;
-    const { items, total, adress, paymentMethod, name, phone, email } = req.body;
-
-    console.log('Обновление заказа:', { items, total, adress, paymentMethod, name, phone, email });
-
-    // Проверка обязательных данных
-    if (!items || items.length === 0) {
-      return res.status(400).json({ message: 'Нет товаров в заказе' });
-    }
-    if (!adress || adress.trim() === '') {
-      return res.status(400).json({ message: 'Адрес обязателен' });
-    }
-    if (!paymentMethod) {
-      return res.status(400).json({ message: 'Не выбран способ оплаты' });
-    }
-
-    // Находим заказ по ID
-    const order = await prisma.order.findUnique({
-      where: { id: parseInt(orderId) },
-      include: { orderItems: true },
-    });
-
-    if (!order) {
-      return res.status(404).json({ message: 'Заказ не найден' });
-    }
-
-    // Обновление заказа в базе данных
-    const updatedOrder = await prisma.order.update({
-      where: { id: parseInt(orderId) },
-      data: {
-        total,
-        adress,
-        email,
-        name,
-        phone,
-        paymentMethod,
-        orderItems: {
-          deleteMany: {}, // Удаляем старые товары
-          create: items.map((item) => ({
-            productId: item.productId,
-            quantity: item.quantity,
-            price: item.price,
-          })), // Добавляем новые товары
-        },
-      },
-      include: {
-        orderItems: {
-          include: { product: true },
-        },
+    const response = await fetchJsonWithToken(`/api/orders/${orderId}`, {
+      method: 'PUT',
+      body: JSON.stringify(orderData),
+      headers: {
+        'Content-Type': 'application/json',
       },
     });
 
-    res.status(200).json(updatedOrder);
+    if (response.status === 200) {
+      console.log('Order updated successfully');
+    } else {
+      console.error('Error updating order:', response.body.message);
+    }
   } catch (error) {
-    console.error('Ошибка при обновлении заказа:', error);
-    res.status(500).json({ message: 'Ошибка при обновлении заказа', error: error.message });
+    console.error('Error:', error);
   }
-});
-
+};
 
 
 
