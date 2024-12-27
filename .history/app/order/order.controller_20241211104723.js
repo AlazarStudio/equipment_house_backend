@@ -181,6 +181,11 @@ export const updateOrder = asyncHandler(async (req, res) => {
       return res.status(404).json({ message: 'Заказ не найден' });
     }
 
+    // Составляем массив ID удаленных товаров
+    const deletedProductIds = order.orderItems
+      .filter(item => !items.find(updatedItem => updatedItem.productId === item.productId))
+      .map(item => item.productId);
+
     // Обновление заказа в базе данных
     const updatedOrder = await prisma.order.update({
       where: { id: parseInt(orderId) },
@@ -192,8 +197,8 @@ export const updateOrder = asyncHandler(async (req, res) => {
         phone,
         paymentMethod,
         orderItems: {
-          deleteMany: {}, // Удаляем старые товары
-          create: items.map((item) => ({
+          deleteMany: { productId: { in: deletedProductIds } }, // Удаляем товары по их ID
+          create: items.map(item => ({
             productId: item.productId,
             quantity: item.quantity,
             price: item.price,
@@ -213,10 +218,6 @@ export const updateOrder = asyncHandler(async (req, res) => {
     res.status(500).json({ message: 'Ошибка при обновлении заказа', error: error.message });
   }
 });
-
-
-
-
 
 export const deleteOrder = asyncHandler(async (req, res) => {
   try {

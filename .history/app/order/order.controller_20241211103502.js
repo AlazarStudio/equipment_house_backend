@@ -160,6 +160,8 @@ export const updateOrder = asyncHandler(async (req, res) => {
     const { orderId } = req.params;
     const { items, total, adress, paymentMethod, name, phone, email } = req.body;
 
+    console.log('Обновление заказа:', { items, total, adress, paymentMethod, name, phone, email });
+
     // Проверка обязательных данных
     if (!items || items.length === 0) {
       return res.status(400).json({ message: 'Нет товаров в заказе' });
@@ -200,11 +202,11 @@ export const updateOrder = asyncHandler(async (req, res) => {
           })), // Добавляем новые товары
         },
       },
-      include: {
-        orderItems: {
-          include: { product: true },
-        },
-      },
+      // include: {
+      //   orderItems: {
+      //     include: { product: true },
+      //   },
+      // },
     });
 
     res.status(200).json(updatedOrder);
@@ -213,7 +215,6 @@ export const updateOrder = asyncHandler(async (req, res) => {
     res.status(500).json({ message: 'Ошибка при обновлении заказа', error: error.message });
   }
 });
-
 
 
 

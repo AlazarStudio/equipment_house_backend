@@ -158,7 +158,20 @@ export const getOrder = asyncHandler(async (req, res) => {
 export const updateOrder = asyncHandler(async (req, res) => {
   try {
     const { orderId } = req.params;
-    const { items, total, adress, paymentMethod, name, phone, email } = req.body;
+    const { items, total, adress, paymentMethod, name, phone, email } =
+      req.body;
+
+    console.log('1111', req.params, req.body);
+
+    // console.log('Обновление заказа:', {
+    //   items,
+    //   total,
+    //   adress,
+    //   paymentMethod,
+    //   name,
+    //   phone,
+    //   email,
+    // });
 
     // Проверка обязательных данных
     if (!items || items.length === 0) {
@@ -210,13 +223,11 @@ export const updateOrder = asyncHandler(async (req, res) => {
     res.status(200).json(updatedOrder);
   } catch (error) {
     console.error('Ошибка при обновлении заказа:', error);
-    res.status(500).json({ message: 'Ошибка при обновлении заказа', error: error.message });
+    res
+      .status(500)
+      .json({ message: 'Ошибка при обновлении заказа', error: error.message });
   }
 });
-
-
-
-
 
 export const deleteOrder = asyncHandler(async (req, res) => {
   try {

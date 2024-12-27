@@ -159,6 +159,9 @@ export const updateOrder = asyncHandler(async (req, res) => {
   try {
     const { orderId } = req.params;
     const { items, total, adress, paymentMethod, name, phone, email } = req.body;
+    
+
+    console.log('Обновление заказа:', { items, total, adress, paymentMethod, name, phone, email });
 
     // Проверка обязательных данных
     if (!items || items.length === 0) {
@@ -213,7 +216,6 @@ export const updateOrder = asyncHandler(async (req, res) => {
     res.status(500).json({ message: 'Ошибка при обновлении заказа', error: error.message });
   }
 });
-
 
 
 
