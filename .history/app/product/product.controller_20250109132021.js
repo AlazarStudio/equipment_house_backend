@@ -18,11 +18,11 @@ export const getProducts = asyncHandler(async (req, res) => {
     const where = Object.entries(filters).reduce((acc, [field, value]) => {
       // Обработка фильтров
       if (typeof value === 'string') {
-        acc[field] = { contains: value, mode: 'insensitive' }; // Для строк
+        acc[field] = { contains: value, mode: 'insensitive' };  // Для строк
       } else if (Array.isArray(value)) {
-        acc[field] = { in: value }; // Для массивов
+        acc[field] = { in: value };  // Для массивов
       } else if (typeof value === 'number') {
-        acc[field] = { equals: value }; // Для чисел
+        acc[field] = { equals: value };  // Для чисел
       }
       return acc;
     }, {});
@@ -52,9 +52,7 @@ export const getProducts = asyncHandler(async (req, res) => {
     res.json(products);
   } catch (error) {
     console.error('Error fetching products:', error);
-    res
-      .status(500)
-      .json({ message: 'Internal Server Error', error: error.message });
+    res.status(500).json({ message: 'Internal Server Error', error: error.message });
   }
 });
 
@@ -113,7 +111,7 @@ export const createNewProduct = asyncHandler(async (req, res) => {
       price: parseFloat(price),
       description,
       characteristics,
-      categoryId: parseInt(categoryId, 29),
+      categoryId: parseInt(categoryId, ),
       subCategoryId: subCategoryId ? parseInt(subCategoryId, 10) : null,
       businessSolutionId: businessSolutionId
         ? parseInt(businessSolutionId, 10)
@@ -169,9 +167,7 @@ export const updateProduct = asyncHandler(async (req, res) => {
     res.json(product);
   } catch (error) {
     console.error('Error updating product:', error);
-    res
-      .status(500)
-      .json({ error: 'Error updating product', message: error.message });
+    res.status(500).json({ error: 'Error updating product', message: error.message });
   }
 });
 
@@ -187,8 +183,6 @@ export const deleteProduct = asyncHandler(async (req, res) => {
     res.json({ message: 'Product deleted!' });
   } catch (error) {
     console.error('Error deleting product:', error);
-    res
-      .status(500)
-      .json({ message: 'Error deleting product', error: error.message });
+    res.status(500).json({ message: 'Error deleting product', error: error.message });
   }
 });
