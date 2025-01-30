@@ -8,9 +8,9 @@ import cors from 'cors';
 import multer from 'multer';
 import xml2js from 'xml2js'; // Импорт для парсинга XML
 import sharp from 'sharp';
-import https from 'https';
 import { errorHandler, notFound } from './app/middleware/error.middleware.js';
 import { prisma } from './app/prisma.js';
+import https from 'https'
 
 import authRoutes from './app/auth/auth.routes.js';
 import userRoutes from './app/user/user.routes.js';
@@ -30,7 +30,7 @@ const __dirname = path.resolve();
 // Настройки CORS
 app.use(
   cors({
-    origin: '*', // Источники фронтенда
+    origin: ['http://127.0.0.1:5173', 'http://localhost:5000'], // Источники фронтенда
     credentials: true, // Включение поддержки куки
     exposedHeaders: ['Content-Range'], // Если требуется для API
   })
@@ -285,6 +285,7 @@ const saveDataToDatabase = async (shop) => {
     console.warn('Товары не найдены в XML.');
   }
 };
+
 
 // Продукты
 app.use('/api/products', productRoutes);

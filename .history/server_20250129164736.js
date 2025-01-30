@@ -8,7 +8,6 @@ import cors from 'cors';
 import multer from 'multer';
 import xml2js from 'xml2js'; // Импорт для парсинга XML
 import sharp from 'sharp';
-import https from 'https';
 import { errorHandler, notFound } from './app/middleware/error.middleware.js';
 import { prisma } from './app/prisma.js';
 
@@ -30,7 +29,7 @@ const __dirname = path.resolve();
 // Настройки CORS
 app.use(
   cors({
-    origin: '*', // Источники фронтенда
+    origin: ['http://127.0.0.1:5173', 'http://localhost:5000'], // Источники фронтенда
     credentials: true, // Включение поддержки куки
     exposedHeaders: ['Content-Range'], // Если требуется для API
   })
@@ -286,6 +285,7 @@ const saveDataToDatabase = async (shop) => {
   }
 };
 
+
 // Продукты
 app.use('/api/products', productRoutes);
 
@@ -304,7 +304,7 @@ app.use(notFound);
 app.use(errorHandler);
 
 // Запуск сервера
-const PORT = process.env.PORT || 5002;
+const PORT = process.env.PORT || 443;
 
 app.listen(PORT, () => {
   console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);

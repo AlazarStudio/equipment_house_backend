@@ -30,7 +30,7 @@ const __dirname = path.resolve();
 // Настройки CORS
 app.use(
   cors({
-    origin: '*', // Источники фронтенда
+    origin: ['http://127.0.0.1:5173', 'http://localhost:5000'], // Источники фронтенда
     credentials: true, // Включение поддержки куки
     exposedHeaders: ['Content-Range'], // Если требуется для API
   })
@@ -304,8 +304,23 @@ app.use(notFound);
 app.use(errorHandler);
 
 // Запуск сервера
-const PORT = process.env.PORT || 5002;
+// const PORT = process.env.PORT || 5002;
 
-app.listen(PORT, () => {
-  console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
+// app.listen(PORT, () => {
+//   console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
+// });
+
+const PORT = process.env.PORT || 443;
+
+const sslOptions = {
+  key: fs.readFileSync(
+    '../../../etc/letsencrypt/live/backend.kch-tourism.ru/privkey.pem'
+  ),
+  cert: fs.readFileSync(
+    '../../../etc/letsencrypt/live/backend.kch-tourism.ru/fullchain.pem'
+  ),
+};
+
+https.createServer(sslOptions, app).listen(PORT, () => {
+  console.log(`HTTPS server running on port ${PORT}`);
 });
