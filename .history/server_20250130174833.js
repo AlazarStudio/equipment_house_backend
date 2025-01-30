@@ -304,7 +304,7 @@ app.use(notFound);
 app.use(errorHandler);
 
 // Запуск сервера
-const PORT = process.env.PORT || 443;
+const PORT = process.env.PORT ;
 
 app.listen(PORT, () => {
   console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
