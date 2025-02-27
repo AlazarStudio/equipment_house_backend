@@ -29,14 +29,7 @@ const __dirname = path.resolve();
 
 // Настройки CORS
 
-app.use(
-  cors({
-    origin: 'http://127.0.0.1:5173', // Или http://localhost:5173, если фронт работает там
-    credentials: true, // Разрешаем отправлять куки и авторизационные заголовки
-    exposedHeaders: ['Content-Range'], // Если требуется
-  })
-);
-
+np
 // app.use(
 //   cors({
 //     origin: '*', // Источники фронтенда

@@ -29,11 +29,15 @@ const __dirname = path.resolve();
 
 // Настройки CORS
 
+import cors from 'cors';
+
 app.use(
   cors({
-    origin: 'http://127.0.0.1:5173', // Или http://localhost:5173, если фронт работает там
-    credentials: true, // Разрешаем отправлять куки и авторизационные заголовки
-    exposedHeaders: ['Content-Range'], // Если требуется
+    origin: ['http://127.0.0.1:5173', 'http://localhost:5173'], // Разрешенные домены
+    credentials: true, // Разрешаем куки и авторизацию
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    exposedHeaders: ['Content-Range', 'X-Content-Range'],
   })
 );
 

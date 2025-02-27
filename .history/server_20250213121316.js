@@ -6,7 +6,7 @@ import path from 'path';
 import fs from 'fs';
 import cors from 'cors';
 import multer from 'multer';
-import xml2js from 'xml2js';
+import xml2js from 'xml2js'; 
 import sharp from 'sharp';
 import https from 'https';
 import { errorHandler, notFound } from './app/middleware/error.middleware.js';
@@ -28,15 +28,6 @@ const app = express();
 const __dirname = path.resolve();
 
 // Настройки CORS
-
-app.use(
-  cors({
-    origin: 'http://127.0.0.1:5173', // Или http://localhost:5173, если фронт работает там
-    credentials: true, // Разрешаем отправлять куки и авторизационные заголовки
-    exposedHeaders: ['Content-Range'], // Если требуется
-  })
-);
-
 // app.use(
 //   cors({
 //     origin: '*', // Источники фронтенда
